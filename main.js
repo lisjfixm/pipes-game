@@ -265,14 +265,16 @@ function buildWorld3D() {
   const pipeMat = new THREE.MeshStandardMaterial({ color: PAL.pipe, roughness: 0.9, side: THREE.BackSide });
   const jointMat = new THREE.MeshStandardMaterial({ color: PAL.joint, roughness: 0.9, side: THREE.BackSide });
 
-  // Cross-section per chapter: Ch1 octagonal pipe, Ch2 square duct, Ch3 round tube.
+  // Cross-section: Ch1 octagonal pipe (N4/N8 vent nights go square like Ch2),
+  // Ch2 square steel duct, Ch3 round growth tube.
+  const isVent = CH === 2 || (CH === 1 && (G.night === 4 || G.night === 8));
   function pipeGeometry(len) {
-    if (CH === 2) return new THREE.BoxGeometry(len, 1.8, 1.8);
+    if (isVent) return new THREE.BoxGeometry(len, 1.8, 1.8);
     const seg = CH === 1 ? 8 : 12;
     return new THREE.CylinderGeometry(1.0, 1.0, len, seg, 1, true);
   }
   function jointGeometry() {
-    if (CH === 2) return new THREE.BoxGeometry(1.9, 2.0, 1.9);
+    if (isVent) return new THREE.BoxGeometry(1.9, 2.0, 1.9);
     if (CH === 1) return new THREE.CylinderGeometry(1.05, 1.05, 2.0, 8, 1, false);
     return new THREE.SphereGeometry(1.0, 12, 10);
   }
@@ -284,9 +286,30 @@ function buildWorld3D() {
     const mesh = new THREE.Mesh(geo, pipeMat);
     mesh.position.copy(pa).add(pb).multiplyScalar(0.5);
     const dir = pb.clone().sub(pa).normalize();
-    const axis = CH === 2 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+    const axis = isVent ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
     mesh.quaternion.setFromUnitVectors(axis, dir);
     worldGroup.add(mesh);
+  }
+  // Ch2: cold light strips along the duct ceilings (per vent preview art).
+  if (CH === 2) {
+    const stripMat = new THREE.MeshStandardMaterial({ color: 0xbcd6e8, emissive: 0x9fc6dd, emissiveIntensity: 0.8 });
+    for (const n of G.nodes) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.18), stripMat);
+      strip.position.set(n.x, 1.72, n.z);
+      worldGroup.add(strip);
+    }
+  }
+  // Ch3: glowing spores clinging to the round rooms.
+  if (CH === 3) {
+    const sporeMat = new THREE.MeshStandardMaterial({ color: 0x88cc55, emissive: 0x66aa33, emissiveIntensity: 0.7 });
+    for (const n of G.nodes) {
+      for (let k = 0; k < 2; k++) {
+        const sp = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 5), sporeMat);
+        const a = Math.random() * Math.PI * 2, r = 0.7;
+        sp.position.set(n.x + Math.cos(a) * r, 0.5 + Math.random() * 0.8, n.z + Math.sin(a) * r);
+        worldGroup.add(sp);
+      }
+    }
   }
   for (const n of G.nodes) {
     const s = new THREE.Mesh(jointGeometry(), jointMat);
@@ -438,6 +461,7 @@ function resetPlayer() {
     battery: d.battery, warmth: 100,
     locked: false, hidden: false,
     speedBoost: 0, slow: false,
+    lookYaw: 0, lookPitch: 0,
   };
   for (const m of G.monsters) scene.remove(m.mesh);
   G.caps = 4; G.pockets = []; G.effects = {};
@@ -453,10 +477,13 @@ function placePlayerCamera() {
     pos = a.lerp(b, p.moving.t);
   } else pos = v(p.node);
   camera.position.set(pos.x, 0.7, pos.z);
+  camera.rotation.order = 'YXZ';
   if (p.facing != null) {
     const f = v(p.facing);
     camera.lookAt(f.x, 0.7, f.z);
   }
+  camera.rotation.y += p.lookYaw;
+  camera.rotation.x += p.lookPitch;
 }
 
 function crawlDuration(back) {
@@ -1574,6 +1601,23 @@ addEventListener('keydown', (e) => {
 });
 addEventListener('keyup', (e) => { G.keys[e.code] = false; });
 
+// Free-look: drag the view to turn the camera (mouse or touch)
+let lookDrag = null;
+addEventListener('pointerdown', (e) => {
+  if (G.state !== 'playing' || !G.player) return;
+  if (e.target.closest('button, select, input, .tbtn, #modal, #map')) return;
+  lookDrag = { x: e.clientX, y: e.clientY };
+});
+addEventListener('pointermove', (e) => {
+  if (!lookDrag || !G.player) return;
+  const dx = e.clientX - lookDrag.x, dy = e.clientY - lookDrag.y;
+  lookDrag.x = e.clientX; lookDrag.y = e.clientY;
+  G.player.lookYaw += dx * 0.004;
+  G.player.lookPitch = Math.max(-0.6, Math.min(0.6, G.player.lookPitch + dy * 0.004));
+});
+addEventListener('pointerup', () => { lookDrag = null; });
+addEventListener('pointercancel', () => { lookDrag = null; });
+
 function toggleLamp() {
   const p = G.player;
   if (p.battery <= 0) return;
@@ -1845,7 +1889,7 @@ window.__dbg = {
   startCrawl, rotate, interact, openJob, hitNeedle, closeModal, killPlayer,
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
-  worldGroup,
+  worldGroup, camera,
   get pressure() { return pressure; },
 };
 

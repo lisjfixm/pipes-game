@@ -27,6 +27,7 @@ Any static file server works; ES modules require `http://`, not `file://`.
 | M | Hold up the paper map |
 | E | Interact / work job / buy / hug / hide |
 | 1–4 | Use pocket item |
+| Drag (mouse / touch) | Free-look around the current junction |
 | Space | Stop needle / turn wheel / clamp leak in a job |
 
 On touch devices an on-screen d-pad and E / F / M buttons appear automatically;
@@ -42,8 +43,9 @@ pocket slots are tappable.
 ## Implemented systems
 
 - Pipe-junction graph with crawl animation, turning and backing up. Cross-section
-  follows the chapter: Ch1 octagonal metal pipe, Ch2 square steel duct, Ch3 round
-  tube with round junction rooms.
+  follows the chapter: Ch1 octagonal metal pipe (N4/N8 vent nights go square),
+  Ch2 square steel duct with cold ceiling strips, Ch3 round growth tube with
+  glowing spores and round junction rooms.
 - Heat lamp: battery drains while on; warmth drains while off; freezing at zero.
 - Safe room (center of the map, nothing gets in): fast battery/warmth recharge,
   vending machine (PIPE-MART / VENT-O-MAT / SAP STOP by chapter), desk radio and
