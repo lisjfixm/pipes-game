@@ -115,3 +115,7 @@ body.touch #touch { display: flex; }
 .t-up { margin: 0 auto; }
 #pockets .slot { pointer-events: auto; cursor: pointer; }
 body { touch-action: manipulation; }
+.sr-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.sr-rows button { text-align: left; }
+.guide-col p { margin: 10px 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.guide-col strong { color: var(--text); }

@@ -99,6 +99,7 @@ const G = {
   cureCarry: 0,
   cureDeposited: 0,
   portals: [],
+  flareReadyAt: 0,
 };
 window.G = G;  // debug / headless inspection
 
@@ -338,17 +339,94 @@ function buildWorld3D() {
       worldGroup.add(red);
     }
   }
-  // safe room box
+  // ---------- Safe room ----------
   const safe = G.nodes[G.safeNode];
+  const sx = safe.x, sz = safe.z;
   const room = new THREE.Mesh(
-    new THREE.BoxGeometry(4.4, 2.6, 4.4, 1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0x3a3226, roughness: 0.85, side: THREE.BackSide })
+    new THREE.BoxGeometry(4.4, 2.4, 4.4, 1, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0x2b2720, roughness: 0.9, side: THREE.BackSide })
   );
-  room.position.set(safe.x, 1.3, safe.z);
+  room.position.set(sx, 1.2, sz);
   worldGroup.add(room);
-  const roomLight = new THREE.PointLight(0xffe6b0, 0.9, 8);
-  roomLight.position.set(safe.x, 1.8, safe.z);
+  const floor = new THREE.Mesh(
+    new THREE.BoxGeometry(4.4, 0.1, 4.4),
+    new THREE.MeshStandardMaterial({ color: 0x3a3226, roughness: 0.85 })
+  );
+  floor.position.set(sx, 0.02, sz);
+  worldGroup.add(floor);
+
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 10, 8),
+    new THREE.MeshStandardMaterial({ color: 0xffe6b0, emissive: 0xffd98a, emissiveIntensity: 1.2 })
+  );
+  bulb.position.set(sx, 2.1, sz);
+  worldGroup.add(bulb);
+  const roomLight = new THREE.PointLight(0xffe6b0, 1.1, 9);
+  roomLight.position.set(sx, 1.9, sz);
   worldGroup.add(roomLight);
+
+  const prop = (w, h, d, color, x, y, z, mat = {}) => {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...mat })
+    );
+    m.position.set(sx + x, y, sz + z);
+    worldGroup.add(m);
+    return m;
+  };
+
+  // Vending machine against the back wall (salmon body, cream strip, slot grid)
+  prop(0.95, 1.9, 0.5, 0xc26a5e, 0.95, 0.95, -1.5);
+  prop(0.85, 0.22, 0.06, 0xefe3c4, 0.95, 1.72, -1.23);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+    prop(0.18, 0.16, 0.04, 0xefe3c4, 0.72 + c * 0.23, 1.36 - r * 0.24, -1.23);
+  }
+  for (let b = 0; b < 3; b++) prop(0.1, 0.1, 0.05, 0x2a2020, 1.3, 1.36 - b * 0.24, -1.22);
+  prop(0.7, 0.12, 0.2, 0x8a4a42, 0.95, 0.18, -1.22);
+
+  // Desk with radio and guide book (left wall)
+  prop(1.3, 0.08, 0.7, 0x4a3b28, -1.35, 0.74, -1.2);
+  prop(0.1, 0.7, 0.1, 0x33291c, -1.9, 0.37, -1.45);
+  prop(0.1, 0.7, 0.1, 0x33291c, -0.8, 0.37, -1.45);
+  prop(0.34, 0.2, 0.16, 0x222830, -1.55, 0.88, -1.2);
+  prop(0.03, 0.3, 0.03, 0x11151a, -1.66, 1.08, -1.2); // radio antenna
+  prop(0.22, 0.05, 0.16, 0x8a3a3a, -1.15, 0.82, -1.2); // guide book
+
+  // Map pile by the right wall
+  prop(0.4, 0.05, 0.3, 0xe9dfc4, 1.35, 0.08, -1.2);
+  prop(0.38, 0.05, 0.28, 0xdcd0ae, 1.35, 0.14, -1.2);
+
+  // Posters on the back wall
+  prop(0.7, 0.5, 0.03, 0xd8c9a0, -1.45, 1.4, -2.16);
+  prop(0.7, 0.5, 0.03, 0x9fb4c8, 1.45, 1.4, -2.16);
+
+  // Pet bed by the south vent
+  prop(0.7, 0.12, 0.5, 0x6b3a3a, 0, 0.08, 1.5);
+
+  if (G.chapter === 3) {
+    // Cauldron in the middle, wash barrel beside it
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.6, 14),
+      new THREE.MeshStandardMaterial({ color: 0x2a2f2a, roughness: 0.7, metalness: 0.3 }));
+    pot.position.set(sx, 0.3, sz + 0.7); worldGroup.add(pot);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.08, 14),
+      new THREE.MeshStandardMaterial({ color: 0x3a443a, roughness: 0.6, metalness: 0.3 }));
+    rim.position.set(sx, 0.62, sz + 0.7); worldGroup.add(rim);
+    const beadCol = [0x88cc55, 0xe8c15a, 0xcc66aa];
+    for (let i = 0; i < Math.min(G.cureDeposited, 9); i++) {
+      const bead = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6),
+        new THREE.MeshStandardMaterial({ color: beadCol[i % 3], emissive: beadCol[i % 3], emissiveIntensity: 0.5 }));
+      const a = (i / 9) * Math.PI * 2;
+      bead.position.set(sx + Math.cos(a) * 0.5, 0.66, sz + 0.7 + Math.sin(a) * 0.5);
+      worldGroup.add(bead);
+    }
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.7, 12),
+      new THREE.MeshStandardMaterial({ color: 0x5a4630, roughness: 0.85 }));
+    barrel.position.set(sx - 1.0, 0.35, sz + 0.7); worldGroup.add(barrel);
+  } else if (G.bossNight) {
+    // Flare box in the middle for the Night 10 finale
+    prop(0.6, 0.5, 0.6, 0x4a5a3a, 0, 0.25, 0.7);
+    prop(0.5, 0.08, 0.5, 0x33402a, 0, 0.52, 0.7);
+  }
 }
 
 // ---------- Player ----------
@@ -364,7 +442,7 @@ function resetPlayer() {
   for (const m of G.monsters) scene.remove(m.mesh);
   G.caps = 4; G.pockets = []; G.effects = {};
   G.lampOn = true; G.mapUp = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
-  G.cureCarry = 0; G.cureDeposited = 0;
+  G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
 }
 
 function placePlayerCamera() {
@@ -1118,6 +1196,65 @@ function buyItem(id) {
   renderPockets(); openShop();
 }
 
+const VENDING_NAMES = { 1: 'PIPE-MART', 2: 'VENT-O-MAT', 3: 'SAP STOP' };
+
+function openSafeRoom() {
+  G.state = 'modal';
+  const s = G.cureCarry === 1 ? '' : 's';
+  const flareReady = performance.now() >= (G.flareReadyAt || 0);
+  const rows = [];
+  rows.push(`<button id="sr-shop">Vending Machine · ${VENDING_NAMES[G.chapter] || 'PIPE-MART'}</button>`);
+  rows.push(`<button id="sr-guide">Radio & How-to Guide</button>`);
+  if (G.chapter === 3 && G.cureCarry > 0) {
+    rows.push(`<button id="sr-cauldron">Cauldron — deposit ${G.cureCarry} ingredient${s}</button>`);
+  }
+  if (G.bossNight) {
+    rows.push(`<button id="sr-flare" ${flareReady ? '' : 'disabled'}>Flare box — ${flareReady ? 'take a flare' : 'ready soon'}</button>`);
+  }
+  modalBox.innerHTML = `<h2>Safe Room</h2>
+    <p style="color:var(--muted)">You are safe here. Nothing gets in. Your lamp charges and you warm up.</p>
+    <div class="sr-rows">${rows.join('')}</div>
+    <button id="close-modal" style="margin-top:14px">Leave</button>`;
+  const shopBtn = $('sr-shop'); if (shopBtn) shopBtn.onclick = openShop;
+  const guideBtn = $('sr-guide'); if (guideBtn) guideBtn.onclick = openGuide;
+  const cauldronBtn = $('sr-cauldron'); if (cauldronBtn) cauldronBtn.onclick = depositCure;
+  const flareBtn = $('sr-flare'); if (flareBtn) flareBtn.onclick = takeFlareBox;
+  $('close-modal').onclick = closeModal;
+  modal.classList.remove('hidden');
+}
+
+function depositCure() {
+  if (G.cureCarry <= 0) return;
+  G.cureDeposited += G.cureCarry; G.cureCarry = 0;
+  promptEl.textContent = 'Ingredient into the cauldron.';
+  beep(520, 0.12, 'triangle', 0.14);
+  openSafeRoom();
+}
+
+function takeFlareBox() {
+  if (performance.now() < (G.flareReadyAt || 0)) return;
+  if (G.pockets.length >= 4) { promptEl.textContent = 'Pockets are full.'; return; }
+  G.pockets.push('flare');
+  G.flareReadyAt = performance.now() + 20000;
+  renderPockets();
+  beep(600, 0.1, 'triangle', 0.12);
+  openSafeRoom();
+}
+
+function openGuide() {
+  G.state = 'modal';
+  modalBox.innerHTML = `<h2>How to Guide</h2>
+    <div class="guide-col">
+      <p><strong>Crawl:</strong> W/Up ahead · A/D turn · S back. F lamp · M map · E interact · 1–4 items.</p>
+      <p><strong>Vitals:</strong> Lamp battery drains when lit; warmth drops in the cold. Both recover fast in the safe room.</p>
+      <p><strong>Shift:</strong> Finish every job, get back here and clock out. In Chapter 3, carry ingredients to the cauldron before you leave.</p>
+      <p><strong>Monsters:</strong> Each one follows a rule — break line of sight, hide in a red-lit nook, or switch the lamp off when it watches your light. Read the hint on the death screen.</p>
+      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you.</p>
+    </div>
+    <button id="close-modal" style="margin-top:14px">Back to the room</button>`;
+  $('close-modal').onclick = closeModal;
+}
+
 // Pressure mini-game state
 let pressure = null, pressureTimer = null;
 
@@ -1393,17 +1530,11 @@ function interact() {
   if (!it) return;
   if (!G.started) {
     G.started = true; updateObjective();
-    if (it.kind === 'shop') openShop();
+    if (it.kind === 'shop') openSafeRoom();
     return;
   }
   if (it.kind === 'shop') {
-    if (G.chapter === 3 && G.cureCarry > 0) {
-      G.cureDeposited += G.cureCarry; G.cureCarry = 0;
-      promptEl.textContent = 'Ingredient into the cauldron.';
-      beep(520, 0.12, 'triangle', 0.14);
-      return;
-    }
-    G.shiftDone ? clockOut() : openShop();
+    G.shiftDone ? clockOut() : openSafeRoom();
   }
   else if (it.kind === 'cage') {
     if (G.keysHeld > 0) {
@@ -1650,7 +1781,7 @@ function updateHUD(dt) {
   // prompt
   const it = nearestInteractable();
   if (!it) promptEl.textContent = '';
-  else if (it.kind === 'shop') promptEl.textContent = G.shiftDone ? 'E — Clock out' : 'E — Vending machine';
+  else if (it.kind === 'shop') promptEl.textContent = G.shiftDone ? 'E — Clock out' : 'E — Safe room';
   else if (it.kind === 'cage') promptEl.textContent = G.keysHeld > 0 ? 'E — Unlock cage' : 'Locked. FIND A KEY.';
   else if (it.kind === 'toll') promptEl.textContent = 'E — Pay toll: 3 caps';
   else if (it.kind === 'job') promptEl.textContent = 'E — Work the job';

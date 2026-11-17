@@ -45,7 +45,10 @@ pocket slots are tappable.
   follows the chapter: Ch1 octagonal metal pipe, Ch2 square steel duct, Ch3 round
   tube with round junction rooms.
 - Heat lamp: battery drains while on; warmth drains while off; freezing at zero.
-- Safe room: fast battery/warmth recharge, vending machine, clock in/out.
+- Safe room (center of the map, nothing gets in): fast battery/warmth recharge,
+  vending machine (PIPE-MART / VENT-O-MAT / SAP STOP by chapter), desk radio and
+  How-to guide, map pile, posters, pet bed; Ch3 cauldron + wash barrel; Ch1
+  Night 10 flare box. Clock in/out from here.
 - Bottle caps scattered in the pipes; 4-slot pockets; timed effects bar.
 - All six Chapter 1 job mini-games: pressure gauge (4 hits), valve wheel
   (horizontal, 3), leaks (clamp 3 spurting slots), bleed valve (close the screw
