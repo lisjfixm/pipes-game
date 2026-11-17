@@ -1,0 +1,99 @@
+:root {
+  --bg: #0c0e10;
+  --panel: #1a1f24;
+  --panel-2: #262d34;
+  --border: #3a434c;
+  --text: #e8e5dd;
+  --muted: #a8a49a;
+  --accent: #e8a13a;
+  --link: #7db9e8;
+  --red: #e06c5f;
+  --green: #7fc97f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+body { color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "Microsoft JhengHei", sans-serif; }
+#game, #game canvas { position: fixed; inset: 0; }
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#vitals { position: absolute; left: 18px; bottom: 18px; width: 220px; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.bar-label { width: 48px; font-size: 11px; letter-spacing: .1em; color: var(--muted); }
+.bar { flex: 1; height: 10px; background: #00000080; border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+.fill { height: 100%; width: 100%; transition: width .15s linear; }
+.fill.battery { background: var(--accent); }
+.fill.warmth { background: var(--link); }
+#caps { position: absolute; left: 18px; bottom: 92px; font-size: 15px; font-weight: 700; }
+#pockets { position: absolute; left: 18px; bottom: 118px; display: flex; gap: 6px; }
+.slot { width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 6px; background: #00000066; display: flex; align-items: center; justify-content: center; font-size: 11px; text-align: center; color: var(--muted); }
+#effects { position: absolute; left: 18px; bottom: 156px; display: flex; gap: 6px; }
+.effect { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: #00000066; font-size: 11px; color: var(--accent); }
+#objective { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--muted); text-align: center; }
+#prompt { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); font-size: 16px; background: #000000aa; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; }
+#night-card { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+#night-card h1 { font-size: 42px; letter-spacing: .15em; margin: 0; }
+#night-card p { color: var(--muted); max-width: 420px; }
+
+/* ---------- Map ---------- */
+#map {
+  position: absolute; right: 18px; top: 18px; width: 300px; height: 300px;
+  background:
+    radial-gradient(circle at 18% 12%, #f3ead2 0%, #e9dfc4 45%, #ddd0b0 100%);
+  border: 1px solid #b9ab8a; border-radius: 3px;
+  box-shadow: 0 10px 26px #000000aa, inset 0 0 40px #c9b99866;
+  transform: rotate(-1.2deg);
+}
+#map::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, #00000008 0 1px, transparent 1px 3px);
+}
+#map svg { width: 100%; height: 100%; }
+
+/* ---------- Modal ---------- */
+#modal { position: fixed; inset: 0; background: #000000aa; display: flex; align-items: center; justify-content: center; z-index: 20; }
+#modal-box { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px; min-width: 320px; max-width: 480px; }
+#modal-box h2 { margin-top: 0; }
+.shop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.shop-item button { pointer-events: auto; }
+button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 14px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ---------- Overlay / death ---------- */
+.overlay, #death { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, #1a120c 0%, #000 75%); z-index: 30; }
+.lobby-box, #death-box { text-align: center; max-width: 460px; padding: 24px; }
+.lobby-box h1 { font-size: 64px; letter-spacing: .3em; margin: 0; }
+.sub { color: var(--muted); }
+.diff-row { margin: 18px 0; display: flex; gap: 10px; align-items: center; justify-content: center; }
+select { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.hint { color: var(--muted); font-size: 12px; margin-top: 18px; }
+#death-title { color: var(--red); font-size: 40px; letter-spacing: .1em; }
+
+/* pressure mini-game */
+.needle-wrap { position: relative; height: 180px; margin: 20px 0; }
+.needle-track { position: absolute; left: 50%; top: 0; bottom: 0; width: 10px; transform: translateX(-50%); background: #00000080; border-radius: 5px; }
+.needle-green { position: absolute; left: 50%; transform: translateX(-50%); width: 18px; background: var(--green); border-radius: 5px; }
+.needle { position: absolute; left: 50%; width: 22px; height: 6px; transform: translateX(-50%); background: var(--red); border-radius: 3px; }
+/* horizontal valve variant */
+.needle-wrap.h { height: 60px; }
+.needle-wrap.h .needle-track { left: 0; right: 0; top: 50%; bottom: auto; width: auto; height: 10px; transform: translateY(-50%); }
+.needle-wrap.h .needle-green { top: 50%; left: auto; transform: translateY(-50%); width: var(--gw); height: 18px; }
+.needle-wrap.h .needle { top: 50%; left: auto; transform: translateY(-50%); width: 6px; height: 22px; }
+/* leaks */
+.leak-row { display: flex; gap: 12px; margin: 22px 0; }
+.leak-slot { flex: 1; height: 74px; background: #151a16; border: 1px solid #2c332a; color: var(--muted); letter-spacing: 1px; }
+.leak-slot.spurting { border-color: var(--amber); color: var(--amber); animation: leakpulse 0.8s infinite; }
+.leak-slot.clamped { border-color: var(--green); color: var(--green); }
+.weld-row { display: flex; gap: 10px; margin: 22px 0; }
+.weld-seg { flex: 1; height: 74px; background: #151a16; border: 1px solid #2c332a; color: var(--muted); }
+.weld-seg.hot { border-color: #e8a13a; color: #e8a13a; animation: leakpulse 0.8s infinite; }
+.weld-seg.done { border-color: var(--green); color: var(--green); }
+.wire-row { display: flex; gap: 24px; margin: 22px 0; justify-content: center; }
+.wire-col { display: flex; flex-direction: column; gap: 10px; }
+.wire-btn { display: flex; align-items: center; gap: 8px; min-width: 120px; background: #151a16; border: 1px solid #2c332a; color: var(--muted); padding: 10px 12px; }
+.wire-btn.sel { border-color: #e8a13a; }
+.wire-btn.done { border-color: var(--green); color: var(--green); }
+.wire-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+@keyframes leakpulse { 50% { opacity: 0.45; } }
