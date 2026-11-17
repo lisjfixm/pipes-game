@@ -122,7 +122,7 @@ scene.background = new THREE.Color(0x07080a);
 scene.fog = new THREE.Fog(0x07080a, 6, 22);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 60);
-const ambient = new THREE.AmbientLight(0x334455, 0.35);
+const ambient = new THREE.AmbientLight(0x334455, 0.5);
 scene.add(ambient);
 
 const lampLight = new THREE.SpotLight(0xffd9a0, 2.2, 16, Math.PI / 4.5, 0.5, 1.2);
@@ -434,6 +434,7 @@ function renderPockets() {
     const el = document.createElement('div');
     el.className = 'slot';
     el.textContent = id ? (ITEMS[id]?.name.split(' ')[0] ?? id) : (i + 1);
+    el.onclick = () => useItem(i);
     pocketsEl.appendChild(el);
   }
 }
@@ -1432,7 +1433,7 @@ addEventListener('keydown', (e) => {
     case 'KeyA': case 'ArrowLeft': rotate(-1); break;
     case 'KeyD': case 'ArrowRight': rotate(1); break;
     case 'KeyF': toggleLamp(); break;
-    case 'KeyM': G.mapUp = !G.mapUp; mapEl.classList.toggle('hidden', !G.mapUp); if (G.mapUp) drawMap(); break;
+    case 'KeyM': toggleMap(); break;
     case 'KeyE': interact(); break;
     case 'Digit1': useItem(0); break;
     case 'Digit2': useItem(1); break;
@@ -1448,6 +1449,12 @@ function toggleLamp() {
   G.lampOn = !G.lampOn;
   lampLight.visible = lampGlow.visible = G.lampOn;
   beep(G.lampOn ? 700 : 320, 0.06, 'square', 0.08);
+}
+
+function toggleMap() {
+  G.mapUp = !G.mapUp;
+  mapEl.classList.toggle('hidden', !G.mapUp);
+  if (G.mapUp) drawMap();
 }
 
 // ---------- Map overlay ----------
@@ -1712,6 +1719,21 @@ window.__dbg = {
 };
 
 // ---------- Buttons ----------
+if (window.matchMedia && matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+
+const touchActions = {
+  forward: () => { if (G.player && G.player.facing != null) startCrawl(G.player.facing); },
+  back: () => { if (!G.player) return; const nb = G.nodes[G.player.node].neighbors; const b = nb.find(n => n !== G.player.facing) ?? G.player.facing; if (b != null) startCrawl(b, true); },
+  left: () => rotate(-1),
+  right: () => rotate(1),
+  interact: () => interact(),
+  lamp: () => toggleLamp(),
+  map: () => toggleMap(),
+};
+document.querySelectorAll('#touch [data-act]').forEach((b) => {
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); touchActions[b.dataset.act](); });
+});
+
 $('start-btn').onclick = () => {
   G.diff = $('difficulty').value;
   G.chapter = Number($('chapter').value);

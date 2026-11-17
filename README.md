@@ -29,6 +29,9 @@ Any static file server works; ES modules require `http://`, not `file://`.
 | 1–4 | Use pocket item |
 | Space | Stop needle / turn wheel / clamp leak in a job |
 
+On touch devices an on-screen d-pad and E / F / M buttons appear automatically;
+pocket slots are tappable.
+
 ## The shift loop
 
 1. Clock in from the safe room (**E**).

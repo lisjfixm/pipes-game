@@ -97,3 +97,21 @@ select { background: var(--panel-2); color: var(--text); border: 1px solid var(-
 .wire-btn.done { border-color: var(--green); color: var(--green); }
 .wire-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
 @keyframes leakpulse { 50% { opacity: 0.45; } }
+
+/* ---------- Touch controls (shown on coarse pointers) ---------- */
+#touch { display: none; pointer-events: none; }
+body.touch #touch { display: flex; }
+#touch .pad, #touch .acts { position: absolute; bottom: 22px; display: flex; gap: 10px; pointer-events: auto; }
+#touch .pad { left: 20px; flex-wrap: wrap; width: 148px; }
+#touch .acts { right: 20px; align-items: flex-end; }
+.tbtn {
+  pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+  width: 56px; height: 56px; border-radius: 14px; background: #00000088;
+  border: 1px solid var(--border); color: var(--text); font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tbtn:active { background: var(--panel-2); border-color: var(--accent); }
+.tbtn.act { width: 60px; height: 60px; font-weight: 700; font-size: 17px; }
+.t-up { margin: 0 auto; }
+#pockets .slot { pointer-events: auto; cursor: pointer; }
+body { touch-action: manipulation; }
