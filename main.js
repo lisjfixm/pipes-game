@@ -1674,11 +1674,12 @@ function openGuide() {
       <p><strong>Crawl:</strong> W/Up ahead · A/D turn · S back. F lamp · M map · E interact · 1–4 items.</p>
       <p><strong>Vitals:</strong> Lamp battery drains when lit; warmth drops in the cold. Both recover fast in the safe room.</p>
       <p><strong>Shift:</strong> Finish every job, get back here and clock out. In Chapter 3, carry ingredients to the cauldron before you leave.</p>
-      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you.</p>
+      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you · Wrench finishes a job or repels the pack · Can draws Randal/Grinner off · Glow Stick draws the moths · Meat teleports away · Mask blocks gas · Extra Map restores a snatched map.</p>
     </div>
     <div class="guide-best">${groups}</div>
     <button id="close-modal" style="margin-top:14px">Back to the room</button>`;
   $('close-modal').onclick = closeModal;
+  modal.classList.remove('hidden');
 }
 
 // Pressure mini-game state
