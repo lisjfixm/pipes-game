@@ -913,7 +913,7 @@ function struggleBehind() {
 
 function killPlayer(monster) {  if (G.state !== 'playing') return;
   if (G.chapter === 3 && G.cureCarry > 0) {
-    G.dropped.push(G.player.node);
+    G.dropped.push({ node: G.player.node, count: G.cureCarry });
     G.cureCarry = 0;
   }
   G.state = 'death';
@@ -2152,7 +2152,7 @@ function drawMap() {
     } else if (n.key) {
       svg += `<circle cx="${x - 2}" cy="${y - 2}" r="2.4" fill="none" stroke="${MINK}" stroke-width="1.2"/>`;
       svg += `<line x1="${x}" y1="${y}" x2="${x + 3.5}" y2="${y + 3.5}" stroke="${MINK}" stroke-width="1.2"/>`;
-    } else if (G.dropped.includes(n.id)) {
+    } else if (G.dropped.some(d => d.node === n.id)) {
       svg += `<circle cx="${x}" cy="${y}" r="2.6" fill="#e8c15a" stroke="#8a6a20" stroke-width="1"/>`;
     } else if (G.frozen && n.id === p.node) {
       svg += `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="1.5" fill="none" stroke="#5aa8ff" stroke-width="1.6"/>`;
@@ -2298,8 +2298,8 @@ function loop(now) {
         }
         if (arr.caps > 0) { G.caps += arr.caps; arr.caps = 0; }
         if (arr.key) { arr.key = false; G.keysHeld++; promptEl.textContent = `Cage key picked up · ${G.keysHeld} held`; }
-        const di = G.dropped.indexOf(arr.id);
-        if (di >= 0) { G.dropped.splice(di, 1); G.cureCarry++; promptEl.textContent = 'Picked up the dropped ingredient.'; }
+        const di = G.dropped.findIndex(d => d.node === arr.id);
+        if (di >= 0) { const n = G.dropped[di].count; G.dropped.splice(di, 1); G.cureCarry += n; promptEl.textContent = `Picked up ${n} dropped ingredient${n > 1 ? 's' : ''}.`; }
       }
     }
     // vitals
