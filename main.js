@@ -5,10 +5,10 @@ import * as THREE from './lib/three.module.js';
    ============================================================ */
 
 const DIFF = {
-  easy:    { battery: 210, warmthDrain: 4.5, monsterRate: 0.75, speed: 0.9, sight: 1, pod: 120 },
-  normal:  { battery: 170, warmthDrain: 6.0, monsterRate: 1.0,  speed: 1.0, sight: 1, pod: 90 },
-  hard:    { battery: 130, warmthDrain: 8.0, monsterRate: 1.25, speed: 1.12, sight: 1, pod: 60 },
-  insane:  { battery: 105, warmthDrain: 11,  monsterRate: 1.5,  speed: 1.25, sight: 1, pod: 45 },
+  easy:    { battery: 210, warmthDrain: 4.5, monsterRate: 0.75, speed: 0.9, sight: 1, pod: 120, capMult: 0.7 },
+  normal:  { battery: 170, warmthDrain: 6.0, monsterRate: 1.0,  speed: 1.0, sight: 1, pod: 90,  capMult: 1.0 },
+  hard:    { battery: 130, warmthDrain: 8.0, monsterRate: 1.25, speed: 1.12, sight: 1, pod: 60,  capMult: 1.5 },
+  insane:  { battery: 105, warmthDrain: 11,  monsterRate: 1.5,  speed: 1.25, sight: 1, pod: 45,  capMult: 2.0 },
 };
 
 const ITEMS = {
@@ -295,7 +295,7 @@ function buildMap() {
   G.nodes.forEach(n => { n.caps = 0; });
   const capNodes = G.nodes.filter(n => n.id !== safe);
   shuffle(capNodes);
-  for (let i = 0; i < 8 && i < capNodes.length; i++) capNodes[i].caps = 2 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < 8 && i < capNodes.length; i++) capNodes[i].caps = Math.max(1, Math.round((2 + Math.floor(Math.random() * 3)) * DIFF[G.diff].capMult));
 
   // Night 10 boss: keys + Randal's cage
   G.bossNight = night.jobs === 0;
