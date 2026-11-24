@@ -1236,13 +1236,15 @@ function aiExterminator(m, dt) {
     if (m.timer <= 0) {
       const cands = G.nodes.filter(n => n.id !== G.safeNode);
       m.fogNode = cands[Math.floor(Math.random() * cands.length)].id;
+      m.node = m.fogNode;
       m.state = 'fog'; m.timer = 4; m.dwell = 0;
     }
   } else if (m.state === 'fog') {
-    if (p.node === m.fogNode && !G.effects.SMOKE && !G.effects.MASK) {
+    const inGas = distNodes(p.node, m.fogNode) <= 3;
+    if (inGas && !G.effects.SMOKE && !G.effects.MASK) {
       m.dwell += dt;
-      if (m.dwell >= 1.2) return killPlayer(m);
-    } else m.dwell = 0;
+      if (m.dwell >= 3) return killPlayer(m);
+    } else m.dwell = Math.max(0, (m.dwell || 0) - dt * 1.5);
     if (m.timer <= 0) { m.state = 'idle'; m.timer = 6; m.fogNode = null; }
   }
 }
@@ -2326,6 +2328,12 @@ function drawMap() {
       svg += `<circle cx="${x}" cy="${y}" r="${ring(2)}" fill="none" stroke="${MGREEN}" stroke-width="1" opacity="0.55"/>`;
     } else if (m.kind === 'choir') {
       svg += `<circle cx="${x}" cy="${y}" r="${ring(2)}" fill="none" stroke="${MGREEN}" stroke-width="1" stroke-dasharray="2 2" opacity="0.6"/>`;
+    } else if (m.kind === 'exterminator' && m.fogNode != null) {
+      const gx = sx(G.nodes[m.fogNode].x), gy = sz(G.nodes[m.fogNode].z);
+      svg += `<circle cx="${gx}" cy="${gy}" r="${ring(3)}" fill="#e8c23a" opacity="0.18"/>`;
+      if (distNodes(p.node, m.fogNode) <= 2) {
+        svg += `<text x="${gx}" y="${gy - ring(3) - 4}" font-size="8" font-weight="700" fill="#a87a18" text-anchor="middle">GAS</text>`;
+      }
     } else if (m.kind === 'flesh') {
       const tx = sx(G.nodes[p.node].x), ty = sz(G.nodes[p.node].z);
       svg += `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}" stroke="${MRED}" stroke-width="1.4" stroke-dasharray="6 4" opacity="0.85"/>`;
@@ -2461,7 +2469,7 @@ function drawMap() {
   svg += `<rect x="152" y="${ly - 5}" width="9" height="9" fill="none" stroke="${MINK}"/><text x="164" y="${ly + 2}">HOME</text>`;
   svg += `<polygon points="204,${ly - 5} 209,${ly - 1} 204,${ly + 3} 199,${ly - 1}" fill="none" stroke="${MINK}"/><text x="212" y="${ly + 2}">NOOK</text>`;
   svg += `</g>`;
-  svg += `<text x="26" y="284" font-size="6.5" fill="${MGREY}">red scribble = Randal / Rampage · bucket = Janitor · orange = Sweeper route</text>`;
+  svg += `<text x="26" y="284" font-size="6.5" fill="${MGREY}">red scribble = Randal / Rampage · bucket = Janitor · orange = Sweeper route · yellow wash = gas</text>`;
   svg += `<text x="26" y="292" font-size="6.5" fill="${MGREY}">green ring = Gardener · dashed = Choir song · dash red = Flesh charge</text>`;
   svg += `<text x="160" y="292" font-size="6.5" fill="${MGREY}">purple = portal · blue X = gate · orange dot = growth</text>`;
   svg += `</svg>`;
