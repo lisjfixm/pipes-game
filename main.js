@@ -282,7 +282,7 @@ function buildMap() {
   }
   // Chapter 2 night 8: zap gates wired across some ducts.
   G.gates = [];
-  if (G.chapter === 2 && G.night === 8) {
+  if (G.chapter === 2 && (G.night === 8 || G.night === 9)) {
     const midEdges = G.edges.filter(([a, b]) =>
       G.nodes[a].neighbors.length > 1 && G.nodes[b].neighbors.length > 1);
     shuffle(midEdges);
