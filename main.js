@@ -17,6 +17,11 @@ const ITEMS = {
   warmer:  { name: 'Hand Warmer',price: 3, desc: 'Big chunk of warmth' },
   energy:  { name: 'Energy Drink', price: 4, desc: 'Faster crawl 20s' },
   smoke:   { name: 'Smoke Bomb', price: 6, desc: 'Hidden from everything 8s' },
+  wrench:  { name: 'Wrench',     price: 6, desc: 'Instantly finish the open job; repels what lurks' },
+  can:     { name: 'Tin Can',    price: 2, desc: 'Clatter pulls Randal/Grinner off your trail' },
+  glow:    { name: 'Glow Stick', price: 2, desc: 'Drop green glow; draws moths away 2 min' },
+  meat:    { name: 'Mystery Meat', price: 4, desc: 'Teleport to a random spot; shakes followers' },
+  mask:    { name: 'Gas Mask',   price: 5, desc: '30s proof against Exterminator gas' },
 };
 
 // Chapter 1 roster per night (featured first)
@@ -108,6 +113,8 @@ const G = {
   marcoWindow: 0,
   jarReadyAt: 0,
   dropped: [],
+  decoy: null,
+  glow: null,
 };
 window.G = G;  // debug / headless inspection
 
@@ -558,6 +565,7 @@ function resetPlayer() {
   G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
   G.dropped = [];
+  G.decoy = null; G.glow = null;
 }
 
 function placePlayerCamera() {
@@ -612,14 +620,45 @@ function addEffect(k, sec) { G.effects[k] = Math.max(G.effects[k] || 0, sec); }
 
 function useItem(slot) {
   const p = G.player;
-  if (G.state !== 'playing' || p.locked) return;
   const id = G.pockets[slot];
   if (!id) return;
+  const inJob = G.state === 'modal' && pressure && pressure.node;
+  if ((G.state !== 'playing' && !(id === 'wrench' && inJob)) || p.locked) return;
   if (id === 'cola') { p.battery = Math.min(DIFF[G.diff].battery, p.battery + DIFF[G.diff].battery / 3); }
   else if (id === 'warmer') { p.warmth = Math.min(100, p.warmth + 45); }
   else if (id === 'energy') { p.speedBoost = 20; addEffect('SPEED', 20); }
   else if (id === 'flare') { addEffect('FLARE', 15); }
   else if (id === 'smoke') { addEffect('SMOKE', 8); }
+  else if (id === 'wrench') {
+    if (G.state === 'modal' && pressure && pressure.node) {
+      G.pockets.splice(slot, 1); renderPockets();
+      finishJob(pressure); return;
+    }
+    for (const m of [...G.monsters]) {
+      const nb = G.nodes[m.node].neighbors;
+      m.node = nb[Math.floor(Math.random() * nb.length)];
+      m.state = 'roam'; m.timer = 10;
+    }
+    promptEl.textContent = 'The wrench slams the pipe and everything scuttles off.';
+    beep(90, 0.3, 'square', 0.2);
+  }
+  else if (id === 'can') {
+    const nb = G.nodes[p.node].neighbors;
+    const target = nb.length ? nb[Math.floor(Math.random() * nb.length)] : p.node;
+    G.decoy = { node: target, t: 12 };
+    promptEl.textContent = 'The tin can clatters down the pipe.';
+  }
+  else if (id === 'glow') {
+    G.glow = { node: p.node, t: 120 };
+    promptEl.textContent = 'The glow stick oozes green light into the pipe.';
+  }
+  else if (id === 'meat') {
+    const spots = G.nodes.filter(n => n.id !== G.safeNode);
+    p.node = spots[Math.floor(Math.random() * spots.length)].id;
+    for (const m of [...G.monsters]) { m.state = 'roam'; m.timer = 6; m.fogNode = null; }
+    promptEl.textContent = 'The meat tugs you somewhere random; the pack loses your trail.';
+  }
+  else if (id === 'mask') { addEffect('MASK', 30); }
   G.pockets.splice(slot, 1);
   renderPockets();
 }
@@ -882,6 +921,7 @@ function aiMaw(m, dt) {
 
 function aiRandal(m, dt) {
   const p = G.player;
+  if (G.decoy && G.decoy.t > 0) { m.node = stepToward(m.node, G.decoy.node); m.state = 'roam'; return; }
   if (m.state === 'idle' || m.state === 'roam') {
     m.state = 'roam';
     if (m.timer <= 0) {
@@ -930,6 +970,10 @@ function aiDrooler(m, dt) {
 
 function aiMoths(m, dt) {
   const p = G.player;
+  if (G.glow && G.glow.t > 0) {
+    m.node = stepToward(m.node, G.glow.node);
+    m.state = 'idle'; p.locked = false; return;
+  }
   if (m.state === 'idle') {
     if (Math.random() < 0.01 * DIFF[G.diff].monsterRate) { m.state = 'pass'; m.node = p.node; m.timer = 3; }
   } else if (m.state === 'pass' || m.state === 'pin') {
@@ -1023,6 +1067,7 @@ function aiForeman(m, dt) {
 // ---------- Chapter 2: The Vents ----------
 function aiGrinner(m, dt) {
   const p = G.player;
+  if (G.decoy && G.decoy.t > 0) { m.node = stepToward(m.node, G.decoy.node); m.state = 'roam'; return; }
   if (G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
   if (m.state === 'idle' || m.state === 'roam') {
     m.state = 'roam';
@@ -1062,7 +1107,7 @@ function aiExterminator(m, dt) {
       m.state = 'fog'; m.timer = 4; m.dwell = 0;
     }
   } else if (m.state === 'fog') {
-    if (p.node === m.fogNode && !G.effects.smoke) {
+    if (p.node === m.fogNode && !G.effects.smoke && !G.effects.MASK) {
       m.dwell += dt;
       if (m.dwell >= 1.2) return killPlayer(m);
     } else m.dwell = 0;
@@ -2022,6 +2067,11 @@ function drawMap() {
       svg += `<line x1="${x}" y1="${y}" x2="${x + 3.5}" y2="${y + 3.5}" stroke="${MINK}" stroke-width="1.2"/>`;
     } else if (G.dropped.includes(n.id)) {
       svg += `<circle cx="${x}" cy="${y}" r="2.6" fill="#e8c15a" stroke="#8a6a20" stroke-width="1"/>`;
+    } else if (G.glow && G.glow.node === n.id) {
+      svg += `<circle cx="${x}" cy="${y}" r="3.2" fill="none" stroke="#5ee87a" stroke-width="1.4"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="1.2" fill="#5ee87a"/>`;
+    } else if (G.decoy && G.decoy.node === n.id) {
+      svg += `<circle cx="${x}" cy="${y}" r="2.4" fill="#9a9488" stroke="#5c584f" stroke-width="1"/>`;
     } else if (n.portal) {
       svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#8a4ad0" stroke-width="1.4" stroke-dasharray="2.5 2"/>`;
       svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#8a4ad0"/>`;
@@ -2114,7 +2164,7 @@ function updateHUD(dt) {
     bossKeysEl.textContent = `KEYS ${G.keysHeld} · LOCKS ${G.locks}`;
   } else bossKeysEl.classList.add('hidden');
   // effects bar
-  const EFFECT_LABEL = { SPEED: 'SPEED', FLARE: 'FLARE', SMOKE: 'SMOKE', goop: 'GOOP' };
+  const EFFECT_LABEL = { SPEED: 'SPEED', FLARE: 'FLARE', SMOKE: 'SMOKE', MASK: 'MASK', goop: 'GOOP' };
   effectsEl.innerHTML = Object.entries(G.effects).filter(([, s]) => s > 0)
     .map(([k, s]) => `<span class="effect">${EFFECT_LABEL[k] || k} ${Math.ceil(s)}</span>`).join('');
   updateObjective();
@@ -2178,6 +2228,8 @@ function loop(now) {
     if (p.warmth <= 0) return killPlayer({ name: 'the Cold', kind: 'cold' });
     // effects timers
     for (const k of Object.keys(G.effects)) { G.effects[k] -= dt; if (G.effects[k] <= 0) delete G.effects[k]; }
+    if (G.decoy && --G.decoy.t <= 0) G.decoy = null;
+    if (G.glow && --G.glow.t <= 0) G.glow = null;
     if (p.speedBoost > 0) p.speedBoost -= dt;
 
     // Ch3 finale escape countdown
@@ -2213,6 +2265,7 @@ window.__dbg = {
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
   wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
+  useItem, buyItem, openShop,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },
