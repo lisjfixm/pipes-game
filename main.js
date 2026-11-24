@@ -1946,10 +1946,10 @@ function clockOut() {
 function interact() {
   const p = G.player;
   if (G.state !== 'playing') return;
-  if (p.reason === 'nana') { // hug takes priority
-    p.locked = false; p.reason = null;
-    const m = G.monsters.find(x => x.kind === 'nana');
-    if (m) removeMonster(m);
+  const nanaM = G.monsters.find(x => x.kind === 'nana' && x.reason === 'nana');
+  if (nanaM) { // hug takes priority
+    p.locked = false; nanaM.state = 'idle'; nanaM.reason = null;
+    removeMonster(nanaM);
     p.warmth = Math.min(100, p.warmth + 30);
     p.battery = Math.min(DIFF[G.diff].battery, p.battery + 20);
     return;
@@ -2411,9 +2411,11 @@ $('revive-btn').onclick = () => {
   for (const m of [...G.monsters]) removeMonster(m);
   const p = G.player;
   p.node = G.safeNode; p.moving = null; p.locked = false; p.hidden = false;
-  p.battery = DIFF[G.diff].battery; p.warmth = 100; p.speedBoost = 0;
+  p.battery = DIFF[G.diff].battery; p.warmth = 100; p.speedBoost = 0; p.slow = false; p.nookTimer = 0;
   G.effects = {};
   G.frozen = null; G.behind = null; G.backStreak = 0;
+  G.decoy = null; G.glow = null;
+  if (pressure) closeModal();
   if (grab) { clearInterval(grabTimer); grab = null; }
   G.state = 'playing';
   placePlayerCamera();
