@@ -297,6 +297,7 @@ function buildMap() {
     shuffle(midEdges);
     for (let i = 0; i < Math.min(3, midEdges.length); i++) {
       midEdges[i].gate = true;
+      midEdges[i].offset = Math.random() * 5;
       G.gates.push(midEdges[i]);
     }
   }
@@ -378,7 +379,8 @@ function buildWorld3D() {
     }
   }
   // Ch2 night 8: charged zap gates across selected ducts.
-  for (const [a, b] of (G.gates || [])) {
+  for (const edge of (G.gates || [])) {
+    const [a, b] = edge;
     const pa = v(a), pb = v(b);
     const mid = pa.clone().add(pb).multiplyScalar(0.5);
     const gateMat = new THREE.MeshStandardMaterial({ color: 0x3a3a22, emissive: 0xd8c83a, emissiveIntensity: 0.6, transparent: true, opacity: 0.55 });
@@ -386,6 +388,7 @@ function buildWorld3D() {
     gate.position.copy(mid);
     gate.lookAt(pb.x, 0, pb.z);
     worldGroup.add(gate);
+    edge.gateMesh = gate;
   }
   // Ch3: glowing spores clinging to the round rooms.
   if (CH === 3) {
@@ -857,6 +860,9 @@ function distNodes(a, b) {
   }
   return 99;
 }
+
+// Zap gates fire every 5 s, for a 1 s window (per wiki).
+function gateFiring(edge) { return ((G.time + (edge.offset || 0)) % 5) < 1; }
 
 // ---------- Monster AI ----------
 function updateMonsters(dt) {
@@ -2358,6 +2364,13 @@ function loop(now) {
     if (G.debugFreeze) { updateHUD(dt); placePlayerCamera(); if (renderer) renderer.render(scene, camera); return; }
     const p = G.player;
     G.time += dt;
+    for (const e of (G.gates || [])) {
+      if (!e.gateMesh) continue;
+      const f = gateFiring(e);
+      e.gateMesh.material.emissiveIntensity = f ? 1.5 : 0.6;
+      e.gateMesh.material.color.set(f ? 0x5a1a1a : 0x3a3a22);
+      e.gateMesh.material.emissive.set(f ? 0xff3a2a : 0xd8c83a);
+    }
     // movement animation
     if (p.moving) {
       p.moving.t += dt / p.moving.dur;
@@ -2370,9 +2383,14 @@ function loop(now) {
         const arr = G.nodes[p.node];
         const edge = G.edges.find(([a, b]) => (a === from && b === p.node) || (a === p.node && b === from));
         if (edge && edge.gate) {
-          p.warmth = Math.max(0, p.warmth - 12);
-          p.battery = Math.max(0, p.battery - 6);
-          promptEl.textContent = 'Zap gate! You jolt through the charged duct.';
+          if (gateFiring(edge)) {
+            p.warmth = Math.max(0, p.warmth - 25);
+            p.battery = Math.max(0, p.battery - 15);
+            promptEl.textContent = 'ZAP! The gate fires right as you cross.';
+            beep(140, 0.25, 'sawtooth', 0.2);
+          } else {
+            promptEl.textContent = 'You slip through the idle gate.';
+          }
         }
         if (arr.caps > 0) { G.caps += arr.caps; arr.caps = 0; }
         if (arr.key) { arr.key = false; G.keysHeld++; promptEl.textContent = `Cage key picked up · ${G.keysHeld} held`; }

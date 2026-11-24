@@ -51,8 +51,8 @@ pocket slots are tappable.
   dead ends as **purple portals** — crawl into one to emerge from its twin on the map;
   three-way+ junctions open into enlarged round rooms. Hiding nooks are themed
   per chapter: Ch1 red-lit hole, Ch2 louvred service cubby, Ch3 vine-curtained
-  grown pocket. Ch2 night 8 wires charged **zap gates** across ducts (crossing
-  one jolts warmth and battery).
+  grown pocket. Ch2 nights 8–9 wire charged **zap gates** across ducts; each
+  fires every 5 s for a 1 s window — wait for the idle gap to cross, or take a jolt.
 - Heat lamp: battery drains while on; warmth drains while off; freezing at zero.
 - Safe room (center of the map, nothing gets in): fast battery/warmth recharge,
   vending machine (PIPE-MART / VENT-O-MAT / SAP STOP by chapter), desk radio and
