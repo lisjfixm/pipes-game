@@ -600,7 +600,7 @@ function resetPlayer() {
   G.motherGrowth = false; G.growths = []; G.growthBurned = 0;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0; G.poloAnswer = false;
   G.dropped = [];
-  G.decoy = null; G.glow = null; G.spawnCd = 0;
+  G.decoy = null; G.glow = null; G.spawnCd = 0; G.serverDone = false;
   G.reviveUsed = false;
   G.frozen = null; G.podEscapeUsed = false;
   G.backStreak = 0; G.behind = null;
@@ -1251,6 +1251,7 @@ function aiExterminator(m, dt) {
 
 function aiServer(m, dt) {
   const p = G.player;
+  if (m.done) return;
   if (m.state === 'idle') {
     m.timer -= dt;
     if (m.timer <= 0) {
@@ -1260,7 +1261,11 @@ function aiServer(m, dt) {
       promptEl.textContent = 'SERVED PAPER — reach the marked junction in time!';
     }
   } else if (m.state === 'serve') {
-    if (p.node === m.target) { m.state = 'idle'; m.timer = 10; promptEl.textContent = 'Paper accepted.'; return; }
+    if (p.node === m.target) {
+      G.caps += 10; m.done = true; G.serverDone = true;
+      promptEl.textContent = 'CASE DISMISSED · +10 caps';
+      removeMonster(m); return;
+    }
     m.timer -= dt;
     if (m.timer <= 0) return killPlayer(m);
   }
@@ -2387,8 +2392,8 @@ function drawMap() {
     } else if (G.decoy && G.decoy.node === n.id) {
       svg += `<circle cx="${x}" cy="${y}" r="2.4" fill="#9a9488" stroke="#5c584f" stroke-width="1"/>`;
     } else if (G.monsters.some(m => m.kind === 'server' && m.state === 'serve' && m.target === n.id)) {
-      svg += `<circle cx="${x}" cy="${y}" r="4" fill="none" stroke="#7fd4e8" stroke-width="1.4" stroke-dasharray="2 1.6"/>`;
-      svg += `<text x="${x}" y="${y - 7}" font-size="7" fill="#7fd4e8" text-anchor="middle">paper</text>`;
+      svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="${MRED}" stroke-width="1.5" stroke-dasharray="2.5 1.8"/>`;
+      svg += `<text x="${x}" y="${y - 8}" font-size="6.5" fill="${MRED}" text-anchor="middle">APPEAR HERE</text>`;
     } else if (n.portal) {
       svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#8a4ad0" stroke-width="1.4" stroke-dasharray="2.5 2"/>`;
       svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#8a4ad0"/>`;
