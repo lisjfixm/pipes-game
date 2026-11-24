@@ -1502,16 +1502,28 @@ function takeFlareBox() {
   openSafeRoom();
 }
 
+const BESTIARY = {
+  1: ['maw', 'randal', 'drooler', 'moths', 'rampage', 'janitor', 'nana', 'burrower', 'lantern', 'tollman', 'foreman'],
+  2: ['grinner', 'sweeper', 'exterminator', 'server', 'flesh', 'faceling', 'temp', 'drip', 'mother', 'young'],
+  3: ['dale', 'marco', 'gardener', 'wrongnook', 'leeches', 'deadair', 'shiftchange', 'choir', 'randalog', 'twoofthem'],
+};
+
 function openGuide() {
   G.state = 'modal';
+  const groups = [1, 2, 3].map(ch => `
+    <div class="best-group">
+      <div class="best-title">Chapter ${ch}</div>
+      ${BESTIARY[ch].map(k => `
+        <div class="best-entry"><strong>${MON_DEFS[k].name}</strong><span>${journalHint(k)}</span></div>`).join('')}
+    </div>`).join('');
   modalBox.innerHTML = `<h2>How to Guide</h2>
     <div class="guide-col">
       <p><strong>Crawl:</strong> W/Up ahead · A/D turn · S back. F lamp · M map · E interact · 1–4 items.</p>
       <p><strong>Vitals:</strong> Lamp battery drains when lit; warmth drops in the cold. Both recover fast in the safe room.</p>
       <p><strong>Shift:</strong> Finish every job, get back here and clock out. In Chapter 3, carry ingredients to the cauldron before you leave.</p>
-      <p><strong>Monsters:</strong> Each one follows a rule — break line of sight, hide in a red-lit nook, or switch the lamp off when it watches your light. Read the hint on the death screen.</p>
       <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you.</p>
     </div>
+    <div class="guide-best">${groups}</div>
     <button id="close-modal" style="margin-top:14px">Back to the room</button>`;
   $('close-modal').onclick = closeModal;
 }
@@ -2165,7 +2177,7 @@ window.__dbg = {
   startCrawl, rotate, interact, openJob, hitNeedle, closeModal, killPlayer,
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
-  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar,
+  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },

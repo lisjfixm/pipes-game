@@ -119,3 +119,8 @@ body { touch-action: manipulation; }
 .sr-rows button { text-align: left; }
 .guide-col p { margin: 10px 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .guide-col strong { color: var(--text); }
+.guide-best { margin-top: 14px; max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.best-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.best-entry { margin: 8px 0; }
+.best-entry strong { display: block; color: var(--text); font-size: 13px; }
+.best-entry span { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; }
