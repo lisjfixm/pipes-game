@@ -1545,6 +1545,9 @@ function openSafeRoom() {
   if (G.effects.goop > 0) {
     rows.push(`<button id="sr-wash">Wash barrel — scrub off the goop</button>`);
   }
+  if (G.mapTaken) {
+    rows.push(`<button id="sr-mappile">Map pile — take a fresh map</button>`);
+  }
   modalBox.innerHTML = `<h2>Safe Room</h2>
     <p style="color:var(--muted)">You are safe here. Nothing gets in. Your lamp charges and you warm up.</p>
     <div class="sr-rows">${rows.join('')}</div>
@@ -1555,6 +1558,7 @@ function openSafeRoom() {
   const flareBtn = $('sr-flare'); if (flareBtn) flareBtn.onclick = takeFlareBox;
   const jarBtn = $('sr-jar'); if (jarBtn) jarBtn.onclick = takeJar;
   const washBtn = $('sr-wash'); if (washBtn) washBtn.onclick = washGoop;
+  const mapBtn = $('sr-mappile'); if (mapBtn) mapBtn.onclick = () => { G.mapTaken = false; promptEl.textContent = 'You grab a fresh paper map from the pile.'; closeModal(); };
   $('close-modal').onclick = closeModal;
   modal.classList.remove('hidden');
 }
