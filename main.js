@@ -627,6 +627,7 @@ function startCrawl(to, back = false) {
   const p = G.player;
   if (p.moving || p.locked) return;
   if (G.behind) return;
+  p.hidden = false;
   if (back) {
     G.backStreak++;
     if (G.backStreak === 3) promptEl.textContent = 'Something is breathing behind you... back up again and it grabs.';
