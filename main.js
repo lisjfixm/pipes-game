@@ -929,11 +929,15 @@ function freezePlayer(monster) {
 
 function smashPod() {
   if (!G.frozen) return;
-  if (G.frozen.t <= 12 && !G.podEscapeUsed) {
-    G.frozen = null; G.podEscapeUsed = true;
-    G.player.locked = false;
-    promptEl.textContent = 'You smash out of the freeze pod!';
-    beep(600, 0.15, 'triangle', 0.14);
+  if (!G.podEscapeUsed) {
+    G.frozen.struggle = (G.frozen.struggle || 0) + 1;
+    beep(220, 0.05, 'square', 0.08);
+    if (G.frozen.struggle >= 8) {
+      G.frozen = null; G.podEscapeUsed = true;
+      G.player.locked = false;
+      promptEl.textContent = 'You smash out of the freeze pod! (one self-escape left for this night)';
+      beep(600, 0.15, 'triangle', 0.14);
+    }
   } else {
     G.frozen.t -= 3;
     beep(200, 0.05, 'square', 0.08);
