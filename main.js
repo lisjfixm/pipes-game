@@ -2369,14 +2369,9 @@ function drawMap() {
     } else if (n.portal) {
       svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#8a4ad0" stroke-width="1.4" stroke-dasharray="2.5 2"/>`;
       svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#8a4ad0"/>`;
-    } else if (n.nook) {
-      // a wrong nook is never drawn
-      if (!fakeNooks.includes(n.id)) {
-        svg += `<polygon points="${x},${y - 4.5} ${x + 4.5},${y} ${x},${y + 4.5} ${x - 4.5},${y}" fill="none" stroke="${MINK}" stroke-width="1.1" opacity="0.85"/>`;
-      } else {
-        svg += `<circle cx="${x}" cy="${y}" r="2.2" fill="${MINK}"/>`;
-      }
-    } else {
+    } else if (n.nook && !fakeNooks.includes(n.id)) {
+      svg += `<polygon points="${x},${y - 4.5} ${x + 4.5},${y} ${x},${y + 4.5} ${x - 4.5},${y}" fill="none" stroke="${MINK}" stroke-width="1.1" opacity="0.85"/>`;
+    } else if (!fakeNooks.includes(n.id)) {
       svg += `<circle cx="${x}" cy="${y}" r="2.4" fill="${MINK}" opacity="0.7"/>`;
     }
   }
