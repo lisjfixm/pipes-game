@@ -2318,7 +2318,7 @@ function loop(now) {
     } else {
       if (G.lampOn) { p.battery -= dt; G.darkTimer = 0; }
       else if (G.chapter === 3) {
-        G.darkTimer = (G.darkTimer || 0) + dt;
+        if (!p.hidden) G.darkTimer = (G.darkTimer || 0) + dt;
         if (G.darkTimer >= 40) return killPlayer({ name: 'The Growth', kind: 'growth' });
       } else p.warmth -= DIFF[G.diff].warmthDrain * dt;
     }
