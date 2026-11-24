@@ -2273,10 +2273,15 @@ function drawMap() {
         }
       }
     } else if (m.kind === 'janitor') {
+      svg += `<circle cx="${x}" cy="${y}" r="11" fill="none" stroke="${MBROWN}" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.55"/>`;
       svg += `<path d="M${x - 4},${y + 4} L${x + 4},${y + 4} L${x + 2.4},${y - 4} L${x - 2.4},${y - 4} Z" fill="none" stroke="${MBROWN}" stroke-width="1.3"/>`;
     } else if (m.kind === 'sweeper') {
       svg += `<rect x="${x - 4}" y="${y - 4}" width="8" height="8" fill="${MORANGE}" opacity="0.7"/>`;
     } else if (m.kind === 'flesh') {
+      if (m.state === 'charge') {
+        const px = sx(G.nodes[p.node].x), py = sz(G.nodes[p.node].z);
+        svg += `<line x1="${x}" y1="${y}" x2="${px}" y2="${py}" stroke="${MRED}" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.8"/>`;
+      }
       svg += `<path d="M${x - 5},${y} l10,0 M${x-2},${y-3} l4,0 M${x-2},${y+3} l4,0" stroke="${MRED}" stroke-width="1.4"/>`;
     } else if (m.kind === 'gardener') {
       svg += `<circle cx="${x}" cy="${y}" r="3.4" fill="none" stroke="${MGREEN}" stroke-width="1.2"/>`;
