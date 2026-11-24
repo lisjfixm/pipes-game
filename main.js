@@ -2397,6 +2397,8 @@ $('revive-btn').onclick = () => {
   p.node = G.safeNode; p.moving = null; p.locked = false; p.hidden = false;
   p.battery = DIFF[G.diff].battery; p.warmth = 100; p.speedBoost = 0;
   G.effects = {};
+  G.frozen = null; G.behind = null; G.backStreak = 0;
+  if (grab) { clearInterval(grabTimer); grab = null; }
   G.state = 'playing';
   placePlayerCamera();
   beep(520, 0.15, 'triangle', 0.12);
