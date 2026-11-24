@@ -97,6 +97,8 @@ const G = {
   reviveUsed: false,
   frozen: null,
   podEscapeUsed: false,
+  backStreak: 0,
+  behind: null,
   time: 0,
   started: false,
   shiftDone: false,
@@ -574,6 +576,7 @@ function resetPlayer() {
   G.decoy = null; G.glow = null;
   G.reviveUsed = false;
   G.frozen = null; G.podEscapeUsed = false;
+  G.backStreak = 0; G.behind = null;
 }
 
 function placePlayerCamera() {
@@ -602,6 +605,21 @@ function crawlDuration(back) {
 function startCrawl(to, back = false) {
   const p = G.player;
   if (p.moving || p.locked) return;
+  if (G.behind) return;
+  if (back) {
+    G.backStreak++;
+    if (G.backStreak === 3) promptEl.textContent = 'Something is breathing behind you... back up again and it grabs.';
+    if (G.backStreak >= 3 && G.backStreak < 5) { promptEl.textContent = 'Something is in the way. Crawl forward to shake it off.'; return; }
+    if (G.backStreak >= 5) {
+      G.behind = { struggle: 0, t: 5 };
+      p.locked = true;
+      promptEl.textContent = 'Hands from both sides! Mash Space to break free!';
+      beep(100, 0.5, 'sawtooth', 0.2);
+      return;
+    }
+  } else {
+    G.backStreak = 0;
+  }
   const toll = G.monsters.find(x => x.kind === 'tollman' && x.node === to && !x.paid);
   if (toll) {
     toll.shove = (toll.shove || 0) + 1;
@@ -873,8 +891,18 @@ function smashPod() {
   }
 }
 
-function killPlayer(monster) {
-  if (G.state !== 'playing') return;
+function struggleBehind() {
+  if (!G.behind) return;
+  G.behind.struggle++;
+  beep(220, 0.05, 'square', 0.08);
+  if (G.behind.struggle >= 5) {
+    G.behind = null; G.player.locked = false; G.backStreak = 0;
+    promptEl.textContent = 'You wrench free of the hands.';
+    beep(600, 0.15, 'triangle', 0.14);
+  }
+}
+
+function killPlayer(monster) {  if (G.state !== 'playing') return;
   if (G.chapter === 3 && G.cureCarry > 0) {
     G.dropped.push(G.player.node);
     G.cureCarry = 0;
@@ -921,6 +949,7 @@ function journalHint(kind) {  const hints = {
     twoofthem: 'Plays both Dale\'s and Marco\'s games at once. Fill the cure jar, let it grab you, hit the green, splash it three times, then run home.',
     growth: 'Sitting in the dark too long lets the Growth in. Keep your night vision on.',
     cold: 'You are freezing. Turn your lamp back on and get to the warm safe room.',
+    thing: 'It only comes in when you back up too much. Stop backing up; mash Space to break free.',
   };
   return hints[kind] ?? 'Learn its rule and it cannot touch you.';
 }
@@ -1955,6 +1984,7 @@ addEventListener('keydown', (e) => {
   }
   if (G.state !== 'playing') return;
   if (G.frozen && (e.code === 'Space' || e.code === 'KeyE')) { smashPod(); return; }
+  if (G.behind && e.code === 'Space') { struggleBehind(); return; }
   if (e.code === 'Space' && G.marcoWindow > 0) {
     G.marcoWindow = 0;
     promptEl.textContent = 'POLO! It heard you — move away from here.';
@@ -2275,6 +2305,10 @@ function loop(now) {
       promptEl.textContent = `Freeze pod — ${Math.ceil(G.frozen.t)}s · mash E / Space to break out`;
       if (G.frozen.t <= 0) return killPlayer(G.frozen.monster);
     }
+    if (G.behind) {
+      G.behind.t -= dt;
+      if (G.behind.t <= 0) return killPlayer({ name: 'The Thing Behind You', kind: 'thing' });
+    }
     // effects timers
     for (const k of Object.keys(G.effects)) { G.effects[k] -= dt; if (G.effects[k] <= 0) delete G.effects[k]; }
     if (G.decoy && --G.decoy.t <= 0) G.decoy = null;
@@ -2314,7 +2348,7 @@ window.__dbg = {
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
   wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
-  useItem, buyItem, openShop, toggleMap, smashPod,
+  useItem, buyItem, openShop, toggleMap, smashPod, struggleBehind, startCrawl,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },
