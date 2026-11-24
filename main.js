@@ -2056,6 +2056,9 @@ function burnGrowth(g) {
   if (g.mesh) { worldGroup.remove(g.mesh); g.mesh = null; }
   const mother = G.monsters.find(m => m.kind === 'mother');
   if (mother) mother.node = g.node; // furious, heads straight for that growth
+  // each burned growth lets another Her Young out to swarm the vents
+  const youngCount = G.monsters.filter(m => m.kind === 'young').length;
+  if (youngCount < 3) spawnMonster('young');
   beep(140, 0.4, 'sawtooth', 0.16);
   if (G.growthBurned >= G.growths.length) {
     if (mother) removeMonster(mother);
