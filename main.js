@@ -1153,6 +1153,7 @@ function aiGrinner(m, dt) {
   const p = G.player;
   if (G.decoy && G.decoy.t > 0) { m.node = stepToward(m.node, G.decoy.node); m.state = 'roam'; return; }
   if (G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
+  if (G.effects.FLARE) { m.state = 'roam'; m.node = stepToward(m.node, G.safeNode); return; }
   if (m.state === 'idle' || m.state === 'roam') {
     m.state = 'roam';
     if (m.timer <= 0) { m.node = stepToward(m.node, p.node); m.timer = 1.1 / DIFF[G.diff].speed; }
@@ -1345,6 +1346,7 @@ function aiLeeches(m, dt) {
       m.node = c[Math.floor(Math.random() * c.length)].id; m.timer = 5;
     }
   }
+  if (p.moving && p.moving.back) { m.state = 'idle'; m.node = stepToward(m.node, G.safeNode); return; }
   if (m.node === p.node) { p.battery -= dt * 8; addEffect('goop', 6); }
 }
 
@@ -1372,6 +1374,7 @@ function aiChoir(m, dt) {
 function aiRandalOG(m, dt) {
   const p = G.player;
   if (G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
+  if (G.effects.FLARE) { m.state = 'roam'; m.node = stepToward(m.node, G.safeNode); return; }
   m.timer -= dt;
   if (m.timer <= 0) {
     const c = G.nodes.filter(n => n.id !== G.safeNode);
