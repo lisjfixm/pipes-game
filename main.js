@@ -1194,12 +1194,23 @@ function aiGrinner(m, dt) {
     m.state = 'roam';
     if (m.timer <= 0) { m.node = stepToward(m.node, p.node); m.timer = 1.1 / DIFF[G.diff].speed; }
     const sight = G.lampOn ? 5 : 3;
-    if (distNodes(m.node, p.node) <= sight) { m.state = 'chase'; m.timer = 0; }
+    if (distNodes(m.node, p.node) <= sight) { m.state = 'chase'; m.timer = 0; m.lastSeen = p.node; }
   } else if (m.state === 'chase') {
     if (G.effects.SMOKE) { m.state = 'roam'; return; }
-    m.node = stepToward(m.node, p.node);
-    if (m.node === p.node) return killPlayer(m);
-    if (distNodes(m.node, p.node) > (G.lampOn ? 6 : 4)) m.state = 'roam';
+    const sight = G.lampOn ? 6 : 4;
+    if (distNodes(m.node, p.node) <= sight) {
+      m.lastSeen = p.node; m.searchT = 30;
+      m.node = stepToward(m.node, p.node);
+      if (m.node === p.node) return killPlayer(m);
+    } else {
+      m.state = 'search'; m.searchT = 30;
+    }
+  } else if (m.state === 'search') {
+    m.searchT -= dt;
+    const sight = G.lampOn ? 5 : 3;
+    if (distNodes(m.node, p.node) <= sight) { m.state = 'chase'; m.lastSeen = p.node; }
+    else if (m.searchT <= 0) { m.node = farNodeFrom(p.node); m.state = 'roam'; }
+    else if (m.node !== m.lastSeen) m.node = stepToward(m.node, m.lastSeen);
   }
 }
 
