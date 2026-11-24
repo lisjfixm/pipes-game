@@ -167,7 +167,7 @@ function beep(freq, dur = 0.15, type = 'square', vol = 0.12, slide = 0) {
 // ---------- Map generation ----------
 function buildMap() {
   G.nodes = []; G.edges = [];
-  const add = (x, z) => { const id = G.nodes.length; G.nodes.push({ id, x, z, neighbors: [], job: null, nook: false, key: false, cage: false }); return id; };
+  const add = (x, z) => { const id = G.nodes.length; G.nodes.push({ id, x, z, neighbors: [], job: null, nook: false, key: false, cage: false, portal: false }); return id; };
   const link = (a, b) => { G.nodes[a].neighbors.push(b); G.nodes[b].neighbors.push(a); G.edges.push([a, b]); };
 
   const safe = add(0, 0); G.safeNode = safe;
@@ -220,6 +220,29 @@ function buildMap() {
     const c = q.shift();
     for (const nb of G.nodes[c].neighbors) if (!(nb in G.safeDist)) {
       G.safeDist[nb] = G.safeDist[c] + 1; q.push(nb);
+    }
+  }
+  // Chapter 3: paired purple portal holes in two far dead ends.
+  G.portals = [];
+  if (G.chapter === 3) {
+    const ends = G.nodes.filter(n => n.neighbors.length === 1 && n.id !== safe);
+    const far = G.nodes.filter(n => n.id !== safe && !n.nook)
+      .sort((a, b) => (G.safeDist[b.id] ?? 0) - (G.safeDist[a.id] ?? 0));
+    const pair = (ends.length >= 2 ? ends : far).slice(0, 2);
+    if (pair.length === 2) {
+      pair.forEach(n => { n.portal = true; });
+      G.portals = [pair[0].id, pair[1].id];
+    }
+  }
+  // Chapter 2 night 8: zap gates wired across some ducts.
+  G.gates = [];
+  if (G.chapter === 2 && G.night === 8) {
+    const midEdges = G.edges.filter(([a, b]) =>
+      G.nodes[a].neighbors.length > 1 && G.nodes[b].neighbors.length > 1);
+    shuffle(midEdges);
+    for (let i = 0; i < Math.min(3, midEdges.length); i++) {
+      midEdges[i].gate = true;
+      G.gates.push(midEdges[i]);
     }
   }
   // scattered bottle caps
@@ -299,6 +322,16 @@ function buildWorld3D() {
       worldGroup.add(strip);
     }
   }
+  // Ch2 night 8: charged zap gates across selected ducts.
+  for (const [a, b] of (G.gates || [])) {
+    const pa = v(a), pb = v(b);
+    const mid = pa.clone().add(pb).multiplyScalar(0.5);
+    const gateMat = new THREE.MeshStandardMaterial({ color: 0x3a3a22, emissive: 0xd8c83a, emissiveIntensity: 0.6, transparent: true, opacity: 0.55 });
+    const gate = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.7, 1.7), gateMat);
+    gate.position.copy(mid);
+    gate.lookAt(pb.x, 0, pb.z);
+    worldGroup.add(gate);
+  }
   // Ch3: glowing spores clinging to the round rooms.
   if (CH === 3) {
     const sporeMat = new THREE.MeshStandardMaterial({ color: 0x88cc55, emissive: 0x66aa33, emissiveIntensity: 0.7 });
@@ -324,12 +357,42 @@ function buildWorld3D() {
       worldGroup.add(panel);
     }
     if (n.nook) {
-      const lamp = new THREE.Mesh(
-        new THREE.SphereGeometry(0.16, 8, 6),
-        new THREE.MeshStandardMaterial({ color: 0xff3333, emissive: 0xff2222, emissiveIntensity: 0.9 })
-      );
-      lamp.position.set(n.x, 0.9, n.z);
-      worldGroup.add(lamp);
+      if (CH === 2) {
+        // louvred service cubby: horizontal slats
+        const slatMat = new THREE.MeshStandardMaterial({ color: 0x5a646c, roughness: 0.85 });
+        for (let k = 0; k < 4; k++) {
+          const slat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.07, 0.12), slatMat);
+          slat.position.set(n.x, 0.55 + k * 0.18, n.z - 0.35);
+          worldGroup.add(slat);
+        }
+      } else if (CH === 3) {
+        // grown pocket behind a curtain of vines
+        const vineMat = new THREE.MeshStandardMaterial({ color: 0x3f7a2e, roughness: 0.9, emissive: 0x244a18, emissiveIntensity: 0.3 });
+        for (let k = -2; k <= 2; k++) {
+          const vine = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.2, 0.05), vineMat);
+          vine.position.set(n.x + k * 0.13, 0.65, n.z - 0.3);
+          worldGroup.add(vine);
+        }
+      } else {
+        const lamp = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 8, 6),
+          new THREE.MeshStandardMaterial({ color: 0xff3333, emissive: 0xff2222, emissiveIntensity: 0.9 })
+        );
+        lamp.position.set(n.x, 0.9, n.z);
+        worldGroup.add(lamp);
+      }
+    }
+    if (n.portal) {
+      const purp = new THREE.MeshStandardMaterial({ color: 0x6a3aa0, emissive: 0x8a4ad0, emissiveIntensity: 0.9, side: THREE.DoubleSide });
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(0.55, 18), purp);
+      disc.position.set(n.x, 0.8, n.z);
+      worldGroup.add(disc);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 8, 22), purp);
+      ring.position.set(n.x, 0.8, n.z + 0.02);
+      worldGroup.add(ring);
+      const pl = new THREE.PointLight(0x8a4ad0, 0.6, 4);
+      pl.position.set(n.x, 0.8, n.z);
+      worldGroup.add(pl);
     }
     if (n.caps > 0) {
       const cap = new THREE.Mesh(
@@ -1199,6 +1262,7 @@ function nearestInteractable() {
   if (toll) return { kind: 'toll', toll };
   const n = G.nodes[p.node];
   if (n.job && !n.job.done) return { kind: 'job', node: n };
+  if (n.portal) return { kind: 'portal', node: n };
   if (n.nook) return { kind: 'nook' };
   return null;
 }
@@ -1577,6 +1641,15 @@ function interact() {
     } else promptEl.textContent = 'Not enough caps for the toll.';
   }
   else if (it.kind === 'job') openJob(it.node);
+  else if (it.kind === 'portal') {
+    const twin = G.portals.find(id => id !== it.node.id);
+    if (twin != null) {
+      p.node = twin; p.moving = null; p.hidden = false;
+      p.facing = G.nodes[twin].neighbors[0] ?? null;
+      p.lookYaw = 0; p.lookPitch = 0;
+      promptEl.textContent = 'You crawl out of the twin portal, across the Growth.';
+    }
+  }
   else if (it.kind === 'nook') { p.hidden = !p.hidden; promptEl.textContent = p.hidden ? 'Hidden in the nook' : ''; }
 }
 
@@ -1730,6 +1803,9 @@ function drawMap() {
     } else if (n.key) {
       svg += `<circle cx="${x - 2}" cy="${y - 2}" r="2.4" fill="none" stroke="${MINK}" stroke-width="1.2"/>`;
       svg += `<line x1="${x}" y1="${y}" x2="${x + 3.5}" y2="${y + 3.5}" stroke="${MINK}" stroke-width="1.2"/>`;
+    } else if (n.portal) {
+      svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#8a4ad0" stroke-width="1.4" stroke-dasharray="2.5 2"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#8a4ad0"/>`;
     } else if (n.nook) {
       // a wrong nook is never drawn
       if (!fakeNooks.includes(n.id)) {
@@ -1829,6 +1905,7 @@ function updateHUD(dt) {
   else if (it.kind === 'cage') promptEl.textContent = G.keysHeld > 0 ? 'E — Unlock cage' : 'Locked. FIND A KEY.';
   else if (it.kind === 'toll') promptEl.textContent = 'E — Pay toll: 3 caps';
   else if (it.kind === 'job') promptEl.textContent = 'E — Work the job';
+  else if (it.kind === 'portal') promptEl.textContent = 'E — Crawl into the purple portal';
   else if (it.kind === 'nook') promptEl.textContent = p.hidden ? 'E — Leave nook' : 'E — Hide in nook';
   if (G.mapUp) drawMap();
 }
@@ -1853,6 +1930,12 @@ function loop(now) {
         const deep = nb.slice().sort((a, b) => (G.safeDist[b] ?? 0) - (G.safeDist[a] ?? 0));
         p.facing = deep.find(n => n !== from) ?? deep[0];
         const arr = G.nodes[p.node];
+        const edge = G.edges.find(([a, b]) => (a === from && b === p.node) || (a === p.node && b === from));
+        if (edge && edge.gate) {
+          p.warmth = Math.max(0, p.warmth - 12);
+          p.battery = Math.max(0, p.battery - 6);
+          promptEl.textContent = 'Zap gate! You jolt through the charged duct.';
+        }
         if (arr.caps > 0) { G.caps += arr.caps; arr.caps = 0; }
         if (arr.key) { arr.key = false; G.keysHeld++; promptEl.textContent = `Cage key picked up · ${G.keysHeld} held`; }
       }
