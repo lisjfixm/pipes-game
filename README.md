@@ -30,7 +30,8 @@ Any static file server works; ES modules require `http://`, not `file://`.
 | Drag (mouse / touch) | Free-look around the current junction |
 | Space | Stop needle / turn wheel / clamp leak in a job |
 
-On touch devices an on-screen d-pad and E / F / M buttons appear automatically;
+On touch devices an on-screen d-pad and E / F / M / OK buttons appear
+automatically (OK = Space: POLO answer, struggle, splash, pod smash);
 pocket slots are tappable.
 
 ## The shift loop

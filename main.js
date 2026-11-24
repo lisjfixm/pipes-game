@@ -2079,21 +2079,27 @@ function interact() {
 }
 
 // ---------- Input ----------
+function primaryAction() {
+  if (grab) { hitGrab(); return; }
+  if (pressure) { hitNeedle(); return; }
+  if (G.frozen) { smashPod(); return; }
+  if (G.behind) { struggleBehind(); return; }
+  if (G.marcoWindow > 0) {
+    G.marcoWindow = 0;
+    promptEl.textContent = 'POLO! It heard you — move away from here.';
+  }
+}
 addEventListener('keydown', (e) => {
   G.keys[e.code] = true;
   if (G.state === 'modal' && e.code === 'Space') {
     e.preventDefault();
-    if (grab) hitGrab(); else if (pressure) hitNeedle();
+    primaryAction();
     return;
   }
   if (G.state !== 'playing') return;
   if (G.frozen && (e.code === 'Space' || e.code === 'KeyE')) { smashPod(); return; }
   if (G.behind && e.code === 'Space') { struggleBehind(); return; }
-  if (e.code === 'Space' && G.marcoWindow > 0) {
-    G.marcoWindow = 0;
-    promptEl.textContent = 'POLO! It heard you — move away from here.';
-    return;
-  }
+  if (e.code === 'Space') { primaryAction(); return; }
   switch (e.code) {
     case 'KeyW': case 'ArrowUp': { if (G.player.facing != null) startCrawl(G.player.facing); break; }
     case 'KeyS': case 'ArrowDown': { const nb = G.nodes[G.player.node].neighbors; const back = nb.find(n => n !== G.player.facing) ?? G.player.facing; if (back != null) startCrawl(back, true); break; }
@@ -2507,7 +2513,7 @@ window.__dbg = {
   startCrawl, rotate, interact, openJob, hitNeedle, closeModal, killPlayer,
   spawnMonster, updateMonsters, scheduleMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
-  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
+  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, depositCure, openGuide, openSafeRoom, washGoop,
   useItem, buyItem, openShop, toggleMap, smashPod, struggleBehind, startCrawl,
   worldGroup, camera,
   get pressure() { return pressure; },
@@ -2525,6 +2531,7 @@ const touchActions = {
   interact: () => interact(),
   lamp: () => toggleLamp(),
   map: () => toggleMap(),
+  action: () => primaryAction(),
 };
 document.querySelectorAll('#touch [data-act]').forEach((b) => {
   b.addEventListener('pointerdown', (e) => { e.preventDefault(); touchActions[b.dataset.act](); });
