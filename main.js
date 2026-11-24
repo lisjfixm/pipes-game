@@ -592,6 +592,7 @@ function startCrawl(to, back = false) {
     return;
   }
   p.moving = { from: p.node, to, t: 0, dur: crawlDuration(back), back };
+  beep(60, 0.07, 'square', 0.05, -15);
 }
 
 function rotate(dir) {
@@ -1149,7 +1150,8 @@ function aiYoung(m, dt) {
 // ---------- Chapter 3: The Growth ----------
 function aiDale(m, dt) {
   const p = G.player;
-  if (!G.lampOn || G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
+  const blinded = !G.lampOn && !G.effects.goop; // gooped: he knows where you are
+  if (blinded || G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
   if (m.state !== 'chase') {
     m.timer -= dt;
     if (m.timer <= 0) { m.node = stepToward(m.node, p.node); m.timer = 1.4; }
@@ -1207,7 +1209,7 @@ function aiLeeches(m, dt) {
       m.node = c[Math.floor(Math.random() * c.length)].id; m.timer = 5;
     }
   }
-  if (m.node === p.node) p.battery -= dt * 8;
+  if (m.node === p.node) { p.battery -= dt * 8; addEffect('goop', 6); }
 }
 
 function aiDeadAir(m, dt) {
@@ -1419,6 +1421,9 @@ function openSafeRoom() {
   if (G.bossNight) {
     rows.push(`<button id="sr-flare" ${flareReady ? '' : 'disabled'}>Flare box — ${flareReady ? 'take a flare' : 'ready soon'}</button>`);
   }
+  if (G.effects.goop > 0) {
+    rows.push(`<button id="sr-wash">Wash barrel — scrub off the goop</button>`);
+  }
   modalBox.innerHTML = `<h2>Safe Room</h2>
     <p style="color:var(--muted)">You are safe here. Nothing gets in. Your lamp charges and you warm up.</p>
     <div class="sr-rows">${rows.join('')}</div>
@@ -1428,6 +1433,7 @@ function openSafeRoom() {
   const cauldronBtn = $('sr-cauldron'); if (cauldronBtn) cauldronBtn.onclick = depositCure;
   const flareBtn = $('sr-flare'); if (flareBtn) flareBtn.onclick = takeFlareBox;
   const jarBtn = $('sr-jar'); if (jarBtn) jarBtn.onclick = takeJar;
+  const washBtn = $('sr-wash'); if (washBtn) washBtn.onclick = washGoop;
   $('close-modal').onclick = closeModal;
   modal.classList.remove('hidden');
 }
@@ -1473,6 +1479,13 @@ function takeJar() {
   G.jarReadyAt = G.time + 8;
   promptEl.textContent = 'Cure jar in hand. Let it grab you, then splash the green.';
   beep(620, 0.1, 'triangle', 0.12);
+  openSafeRoom();
+}
+
+function washGoop() {
+  delete G.effects.goop;
+  promptEl.textContent = 'Scrubbed clean at the wash barrel.';
+  beep(480, 0.12, 'triangle', 0.12);
   openSafeRoom();
 }
 
@@ -2093,8 +2106,9 @@ function updateHUD(dt) {
     bossKeysEl.textContent = `KEYS ${G.keysHeld} · LOCKS ${G.locks}`;
   } else bossKeysEl.classList.add('hidden');
   // effects bar
+  const EFFECT_LABEL = { SPEED: 'SPEED', FLARE: 'FLARE', SMOKE: 'SMOKE', goop: 'GOOP' };
   effectsEl.innerHTML = Object.entries(G.effects).filter(([, s]) => s > 0)
-    .map(([k, s]) => `<span class="effect">${k} ${Math.ceil(s)}</span>`).join('');
+    .map(([k, s]) => `<span class="effect">${EFFECT_LABEL[k] || k} ${Math.ceil(s)}</span>`).join('');
   updateObjective();
   // prompt
   const it = nearestInteractable();
@@ -2188,7 +2202,7 @@ window.__dbg = {
   startCrawl, rotate, interact, openJob, hitNeedle, closeModal, killPlayer,
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
-  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide,
+  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },
