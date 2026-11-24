@@ -28,7 +28,7 @@ const ITEMS = {
 // Chapter 1 roster per night (featured first)
 const NIGHTS = [
   { jobs: 3, roster: ['maw'] },
-  { jobs: 3, roster: ['randal', 'maw'] },
+  { jobs: 4, roster: ['randal', 'maw'] },
   { jobs: 4, roster: ['drooler', 'maw', 'randal'] },
   { jobs: 4, roster: ['moths', 'maw', 'randal', 'drooler'] },
   { jobs: 5, roster: ['rampage', 'maw', 'randal', 'drooler', 'moths'] },

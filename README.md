@@ -86,7 +86,18 @@ pocket slots are tappable.
   50-second run back to the safe room. It plays both halves at once: a timed
   MARCO! call you answer with POLO (Space, then move), and it spots your lit
   night vision. No jar when it grabs you, and it kills you.
-- Death screen with a journal hint per monster; retry restarts the night.
+- Death screen with a journal hint per monster; one free revive per night
+  respawns you in the safe room; the retry button restarts the night.
+- Freeze pods: Randal and Randal, Overgrown lock you in a cryo locker instead
+  of killing on sight; mash E / Space to struggle out once per night, or the
+  pod timer ends the shift.
+- The Thing Behind You: back up three times in a row and it crawls in behind
+  you; keep backing up and it grabs you — mash Space to break free. Crawling
+  forward shakes it off.
+- Dropped cure ingredients stay on the junction where you died and are marked
+  on the paper map until you crawl back over them.
+- The Drooler can snatch your map (small chance, once per night); an Extra Map
+  unfolds a fresh one. Stay hidden in a nook past 25 s and Nosy catches you.
 - Synthesized WebAudio cues: low ambient hum, lamp click, job-complete chime,
   death sting, boss-win arpeggio (no audio assets).
 
@@ -136,7 +147,11 @@ pocket slots are tappable.
 ## Items implemented
 
 Pipe Cola (battery), Flare (keeps things away), Hand Warmer (warmth),
-Energy Drink (faster crawl), Smoke Bomb (hidden 8 s).
+Energy Drink (faster crawl), Smoke Bomb (hidden 8 s), Wrench (finishes the open
+job instantly / repels what lurks, then snaps), Tin Can (clatter pulls Randal
+and the Grinner off your trail), Glow Stick (green glow draws moths away 2 min),
+Mystery Meat (teleports to a random spot, shakes followers), Gas Mask (30 s
+proof against Exterminator gas), Extra Map (restores a snatched paper map).
 
 ## Roadmap
 
