@@ -2272,10 +2272,16 @@ function drawMap() {
   svg += `<line x1="24" y1="22" x2="276" y2="22" stroke="${MINK}" stroke-width="0.6" opacity="0.35"/>`;
 
   // pipes, drawn twice with a tiny offset so they read as pencil
-  for (const [a, b] of G.edges) {
+  for (const edge of G.edges) {
+    const [a, b] = edge;
     const x1 = sx(G.nodes[a].x), y1 = sz(G.nodes[a].z), x2 = sx(G.nodes[b].x), y2 = sz(G.nodes[b].z);
     svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${MINK}" stroke-width="2.6" opacity="0.12"/>`;
     svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${MINK}" stroke-width="1.1" opacity="0.8"/>`;
+    if (edge.gate) {
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      svg += `<line x1="${mx - 3.5}" y1="${my - 4.5}" x2="${mx + 3.5}" y2="${my + 4.5}" stroke="#5ab0e8" stroke-width="1.8"/>`;
+      svg += `<line x1="${mx - 3.5}" y1="${my + 4.5}" x2="${mx + 3.5}" y2="${my - 4.5}" stroke="#5ab0e8" stroke-width="1.2" opacity="0.7"/>`;
+    }
   }
 
   // threat overlays first, so the pipes and badges sit on top
