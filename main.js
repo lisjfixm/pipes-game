@@ -1634,7 +1634,7 @@ function openSafeRoom() {
   const flareBtn = $('sr-flare'); if (flareBtn) flareBtn.onclick = takeFlareBox;
   const jarBtn = $('sr-jar'); if (jarBtn) jarBtn.onclick = takeJar;
   const washBtn = $('sr-wash'); if (washBtn) washBtn.onclick = washGoop;
-  const mapBtn = $('sr-mappile'); if (mapBtn) mapBtn.onclick = () => { G.mapTaken = false; promptEl.textContent = 'You grab a fresh paper map from the pile.'; closeModal(); };
+  const mapBtn = $('sr-mappile'); if (mapBtn) mapBtn.onclick = () => { G.mapTaken = false; G.gpsJam = false; promptEl.textContent = 'You grab a fresh paper map from the pile.'; closeModal(); };
   $('close-modal').onclick = closeModal;
   modal.classList.remove('hidden');
 }
