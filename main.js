@@ -94,6 +94,7 @@ const G = {
   mapUp: false,
   mapTaken: false,
   mapRolled: false,
+  reviveUsed: false,
   time: 0,
   started: false,
   shiftDone: false,
@@ -569,6 +570,7 @@ function resetPlayer() {
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
   G.dropped = [];
   G.decoy = null; G.glow = null;
+  G.reviveUsed = false;
 }
 
 function placePlayerCamera() {
@@ -857,6 +859,7 @@ function killPlayer(monster) {
   deathTitle.textContent = `CAUGHT BY ${monster.name.toUpperCase()}`;
   deathText.textContent = journalHint(monster.kind);
   deathEl.classList.remove('hidden');
+  $('revive-btn').classList.toggle('hidden', G.reviveUsed);
   beep(150, 0.7, 'sawtooth', 0.22, -110);
 }
 
@@ -2309,6 +2312,18 @@ $('start-btn').onclick = () => {
   beep(440, 0.1, 'triangle', 0.12);
   lobbyEl.classList.add('hidden');
   startNight();
+};
+$('revive-btn').onclick = () => {
+  deathEl.classList.add('hidden');
+  G.reviveUsed = true;
+  for (const m of [...G.monsters]) removeMonster(m);
+  const p = G.player;
+  p.node = G.safeNode; p.moving = null; p.locked = false; p.hidden = false;
+  p.battery = DIFF[G.diff].battery; p.warmth = 100; p.speedBoost = 0;
+  G.effects = {};
+  G.state = 'playing';
+  placePlayerCamera();
+  beep(520, 0.15, 'triangle', 0.12);
 };
 $('retry-btn').onclick = () => {
   deathEl.classList.add('hidden');
