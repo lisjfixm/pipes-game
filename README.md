@@ -132,7 +132,7 @@ pocket slots are tappable.
 - **The Faceling** — haunts one hiding nook; never hide in that hole.
 - **The Temp** — undoes finished jobs; keep your lamp on him to shoo him away. An Energy Drink handed to him nearby bribes him to help finish jobs for a while.
 - **The Drip** — hangs overhead; drops on anyone who stops under it. Keep crawling.
-- **The Mother** — asleep until the work is done; the last job wakes her, then you have 50 s to crawl back to the safe room. She hunts your heat; stay lamp-off on the way.
+- **The Mother** — asleep until the work is done; the last job wakes her. Burn every wall growth with a flare (one flare per growth, topped up at the wake), then she falls and you have 50 s to crawl back to the safe room. She hunts your heat: lamp off / no flare means she can't follow, hiding holes and the safe room give off no heat.
 - **Her Young** — wanders in swarms; latching on slows your crawl. Step round them.
 
 ## Monster rules implemented (Chapter 3: The Growth)

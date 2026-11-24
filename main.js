@@ -122,6 +122,9 @@ const G = {
   splashes: 0,
   escapeAt: 0,
   motherEscape: false,
+  motherGrowth: false,
+  growths: [],
+  growthBurned: 0,
   marcoTimer: 0,
   marcoWindow: 0,
   jarReadyAt: 0,
@@ -592,6 +595,7 @@ function resetPlayer() {
   G.lampOn = true; G.mapUp = false; G.mapTaken = false; G.mapRolled = false; G.gpsJam = false; G.gpsProtected = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
   G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0; G.motherEscape = false;
+  G.motherGrowth = false; G.growths = []; G.growthBurned = 0;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
   G.dropped = [];
   G.decoy = null; G.glow = null;
@@ -1317,7 +1321,19 @@ function aiDrip(m, dt) {
 function aiMother(m, dt) {
   const p = G.player;
   if (!G.shiftDone) { m.state = 'sleep'; return; }
-  if (G.effects.SMOKE || p.node === G.safeNode || !G.lampOn) { m.state = 'idle'; return; }
+  // heat sense: smoke, a hiding hole, or the safe room give off no heat
+  if (G.effects.SMOKE || p.node === G.safeNode || p.hidden) { m.state = 'idle'; return; }
+  const heat = G.lampOn || G.effects.FLARE; // lamp off / no flare: a tiny spot she can't follow
+  if (!heat) {
+    m.state = 'sniff';
+    m.timer -= dt;
+    if (m.timer <= 0) {
+      const nb = G.nodes[m.node].neighbors;
+      m.node = nb[Math.floor(Math.random() * nb.length)];
+      m.timer = 1.6 / DIFF[G.diff].speed;
+    }
+    return;
+  }
   m.node = stepToward(m.node, p.node);
   if (m.node === p.node) return killPlayer(m);
 }
@@ -1543,7 +1559,8 @@ let proxTimer = 0;
 function scheduleMonsters(dt) {
   spawnClock -= dt;
   if (spawnClock > 0) return;
-  const roster = nightTable()[G.night - 1].roster;
+  const roster0 = nightTable()[G.night - 1].roster;
+  const roster = G.motherGrowth ? roster0.filter(k => k !== 'grinner' && k !== 'flesh') : roster0;
   const active = new Set(G.monsters.map(m => m.kind));
   const missing = roster.filter(k => !active.has(k));
   const jobsDone = (G.jobTotal || 0) - G.jobs.length;
@@ -1564,7 +1581,9 @@ function nearestInteractable() {
     (x.node === p.node || x.node === p.facing));
   if (toll) return { kind: 'toll', toll };
   const n = G.nodes[p.node];
-  if (n.job && !n.job.done) return { kind: 'job', node: n };
+  if (n.job && !n.job.done && G.jobs.includes(n)) return { kind: 'job', node: n };
+  const growth = G.growths.find(g => !g.burned && g.node === p.node);
+  if (growth) return { kind: 'growth', growth };
   if (n.portal) return { kind: 'portal', node: n };
   if (n.nook) return { kind: 'nook' };
   return null;
@@ -1703,6 +1722,10 @@ function updateBossBar() {
     el.classList.remove('hidden');
   } else if (G.bossPhase === 'escape') {
     el.textContent = `GET HOME  ${Math.max(0, Math.ceil(G.escapeAt))}s`;
+    el.classList.remove('hidden');
+  } else if (G.motherGrowth) {
+    const seg = '◼'.repeat(G.growths.length - G.growthBurned) + '◻'.repeat(G.growthBurned);
+    el.textContent = `THE MOTHER  ${seg}`;
     el.classList.remove('hidden');
   } else if (G.motherEscape) {
     el.textContent = `MOTHER  GET HOME  ${Math.max(0, Math.ceil(G.escapeAt))}s`;
@@ -1972,18 +1995,53 @@ function objectiveText() {
     if (G.bossPhase === 'escape') return `Get home in ${Math.max(0, Math.ceil(G.escapeAt))}s`;
     return 'Brew the cure — bring every ingredient to the cauldron';
   }
+  if (G.motherGrowth) return `Burn the growths · ${G.growthBurned}/${G.growths.length}`;
   if (G.motherEscape) return `Get home in ${Math.max(0, Math.ceil(G.escapeAt))}s`;
   if (!G.shiftDone) return `Finish ${G.jobs.length} job${G.jobs.length === 1 ? '' : 's'}`;
   if (G.chapter === 3 && G.cureCarry > 0) return `Carry ${G.cureCarry} ingredient${G.cureCarry === 1 ? '' : 's'} to the cauldron`;
   return 'All jobs done — get back to the safe room';
 }
 
+function wakeMother() {
+  G.motherGrowth = true; G.growthBurned = 0; G.growths = [];
+  // she arrives; the Grinner and the Flesh leave the vents
+  for (const m of [...G.monsters]) if (m.kind === 'grinner' || m.kind === 'flesh') removeMonster(m);
+  if (!G.monsters.some(m => m.kind === 'mother')) spawnMonster('mother');
+  const candidates = G.nodes.filter(n => n.id !== G.safeNode && !n.nook && !n.job).map(n => n.id);
+  shuffle(candidates);
+  const total = Math.min(3, candidates.length);
+  for (let i = 0; i < total; i++) G.growths.push({ node: candidates[i], burned: false });
+  // everyone's pockets get topped up with flares, one per growth
+  let need = total - G.pockets.filter(x => x === 'flare').length;
+  while (need > 0 && G.pockets.length < 4) { G.pockets.push('flare'); need--; }
+  renderPockets();
+  showNightCard('THE MOTHER WAKES', 'Burn every growth with a flare, then run home!');
+  beep(98, 0.5, 'sawtooth', 0.18);
+}
+
+function burnGrowth(g) {
+  const slot = G.pockets.indexOf('flare');
+  if (slot < 0) { promptEl.textContent = 'You need a flare to burn this growth.'; return; }
+  G.pockets.splice(slot, 1); renderPockets();
+  g.burned = true; G.growthBurned++;
+  const mother = G.monsters.find(m => m.kind === 'mother');
+  if (mother) mother.node = g.node; // furious, heads straight for that growth
+  beep(140, 0.4, 'sawtooth', 0.16);
+  if (G.growthBurned >= G.growths.length) {
+    if (mother) removeMonster(mother);
+    G.motherGrowth = false; G.motherEscape = true; G.escapeAt = 50;
+    showNightCard('SHE IS DOWN', '50 seconds to get back to the safe room!');
+    beep(70, 0.5, 'sawtooth', 0.18);
+  } else {
+    promptEl.textContent = `Growth burns — she screams! (${G.growthBurned}/${G.growths.length})`;
+  }
+  updateObjective();
+}
+
 function checkNightProgress() {
   if (G.jobs.length === 0) G.shiftDone = true;
-  if (G.chapter === 2 && G.night === 10 && G.shiftDone && !G.motherEscape) {
-    G.motherEscape = true; G.escapeAt = 50;
-    showNightCard('THE MOTHER WAKES', '50 seconds to get back to the safe room!');
-    beep(98, 0.5, 'sawtooth', 0.18);
+  if (G.chapter === 2 && G.night === 10 && G.shiftDone && !G.motherGrowth && !G.motherEscape) {
+    wakeMother();
   }
   updateObjective();
 }
@@ -2014,7 +2072,7 @@ function bossWin() {
 
 function clockOut() {
   if (isFinale()) return; // finale resolves through the boss fight / escape timer
-  if (G.motherEscape) return; // Ch2 N10 resolves through the escape timer
+  if (G.motherEscape || G.motherGrowth) return; // Ch2 N10 resolves through growths / escape timer
   if (!G.shiftDone) return;
   if (G.chapter === 3 && G.cureCarry > 0) {
     promptEl.textContent = 'Bring the ingredient to the cauldron in the safe room.';
@@ -2067,6 +2125,7 @@ function interact() {
     } else promptEl.textContent = 'Not enough caps for the toll.';
   }
   else if (it.kind === 'job') openJob(it.node);
+  else if (it.kind === 'growth') burnGrowth(it.growth);
   else if (it.kind === 'portal') {
     const twin = G.portalPair[it.node.id];
     if (twin != null) {
@@ -2245,6 +2304,12 @@ function drawMap() {
       const L = (JOB_LETTERS[G.chapter] || JOB_LETTERS[1])[n.job.type] || '?';
       svg += `<rect x="${x - 6.5}" y="${y - 5.5}" width="13" height="11" rx="1.5" fill="#efe3c4" stroke="${MORANGE}" stroke-width="1.2"/>`;
       svg += `<text x="${x}" y="${y + 3}" font-size="8" fill="${MORANGE}" text-anchor="middle" font-weight="bold">${L}</text>`;
+    } else if (G.growths.some(g => g.node === n.id && !g.burned)) {
+      svg += `<circle cx="${x}" cy="${y}" r="4" fill="#c96a2a" stroke="#5a2a08" stroke-width="1.2"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#ffd98a"/>`;
+    } else if (G.growths.some(g => g.node === n.id && g.burned)) {
+      svg += `<line x1="${x - 3}" y1="${y - 3}" x2="${x + 3}" y2="${y + 3}" stroke="${MGREY}" stroke-width="1.2"/>`;
+      svg += `<line x1="${x - 3}" y1="${y + 3}" x2="${x + 3}" y2="${y - 3}" stroke="${MGREY}" stroke-width="1.2"/>`;
     } else if (n.key) {
       svg += `<circle cx="${x - 2}" cy="${y - 2}" r="2.4" fill="none" stroke="${MINK}" stroke-width="1.2"/>`;
       svg += `<line x1="${x}" y1="${y}" x2="${x + 3.5}" y2="${y + 3.5}" stroke="${MINK}" stroke-width="1.2"/>`;
@@ -2361,7 +2426,7 @@ function updateHUD(dt) {
   if (G.bossNight) {
     bossKeysEl.classList.remove('hidden');
     bossKeysEl.textContent = `KEYS ${G.keysHeld} · LOCKS ${G.locks}`;
-  } else if (G.motherEscape || G.bossPhase === 'fight' || G.bossPhase === 'escape') {
+  } else if (G.motherGrowth || G.motherEscape || G.bossPhase === 'fight' || G.bossPhase === 'escape') {
     updateBossBar();
   } else bossKeysEl.classList.add('hidden');
   // effects bar
@@ -2376,6 +2441,7 @@ function updateHUD(dt) {
   else if (it.kind === 'cage') promptEl.textContent = G.keysHeld > 0 ? 'E — Unlock cage' : 'Locked. FIND A KEY.';
   else if (it.kind === 'toll') promptEl.textContent = 'E — Pay toll: 3 caps';
   else if (it.kind === 'job') promptEl.textContent = 'E — Work the job';
+  else if (it.kind === 'growth') promptEl.textContent = G.pockets.includes('flare') ? 'E — Burn the growth with a flare' : 'Growth here — you need a flare';
   else if (it.kind === 'portal') promptEl.textContent = 'E — Crawl into the purple portal';
   else if (it.kind === 'nook') promptEl.textContent = p.hidden ? 'E — Leave nook' : 'E — Hide in nook';
   if (G.mapUp) drawMap();
