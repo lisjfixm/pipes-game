@@ -2346,6 +2346,8 @@ function updateHUD(dt) {
   if (G.bossNight) {
     bossKeysEl.classList.remove('hidden');
     bossKeysEl.textContent = `KEYS ${G.keysHeld} · LOCKS ${G.locks}`;
+  } else if (G.motherEscape || G.bossPhase === 'fight' || G.bossPhase === 'escape') {
+    updateBossBar();
   } else bossKeysEl.classList.add('hidden');
   // effects bar
   const EFFECT_LABEL = { SPEED: 'SPEED', FLARE: 'FLARE', SMOKE: 'SMOKE', MASK: 'MASK', goop: 'GOOP' };
