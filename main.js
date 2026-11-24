@@ -1257,9 +1257,10 @@ function aiFlesh(m, dt) {
   const p = G.player;
   if (m.state === 'idle') {
     m.timer -= dt;
-    if (m.timer <= 0 && distNodes(m.node, p.node) <= 3) m.state = 'warn';
+    if (m.timer <= 0 && distNodes(m.node, p.node) <= 3) { m.state = 'warn'; m.timer = 1.5; }
   } else if (m.state === 'warn') {
-    if (m.timer <= 0) m.state = 'charge';
+    m.timer -= dt;
+    if (m.timer <= 0) { m.state = 'charge'; m.timer = 3; }
   } else if (m.state === 'charge') {
     m.node = stepToward(m.node, p.node);
     if (m.node === p.node && !p.hidden) return killPlayer(m);
