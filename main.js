@@ -1479,11 +1479,11 @@ function scheduleMonsters(dt) {
   const active = new Set(G.monsters.map(m => m.kind));
   const missing = roster.filter(k => !active.has(k));
   const jobsDone = (G.jobTotal || 0) - G.jobs.length;
-  const maxOut = Math.min(roster.length, (G.night >= 3 ? 2 : 1) + Math.floor(jobsDone / 2));
+  const maxOut = Math.max(1, Math.min(roster.length, (G.night >= 3 ? 2 : 1) + Math.floor(jobsDone / 2)) - 1);
   if (!missing.length) { spawnClock = 6; return; }
   if (G.monsters.length < maxOut) {
     spawnMonster(missing[Math.floor(Math.random() * missing.length)]);
-    spawnClock = Math.max(4, 12 - jobsDone * 1.5) / DIFF[G.diff].monsterRate;
+    spawnClock = Math.max(4, 12 - jobsDone * 1.5) * 1.15 / DIFF[G.diff].monsterRate;
   } else spawnClock = 4;
 }
 
