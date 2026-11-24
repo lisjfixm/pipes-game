@@ -172,6 +172,14 @@ function initAudio() {
     osc.type = 'sawtooth'; osc.frequency.value = 52;
     gain.gain.value = 0.025;
     osc.connect(gain); gain.connect(actx.destination); osc.start();
+    // low wind/steam wash under the hum
+    const nb = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+    const nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    const noise = actx.createBufferSource(); noise.buffer = nb; noise.loop = true;
+    const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+    const ng = actx.createGain(); ng.gain.value = 0.016;
+    noise.connect(lp); lp.connect(ng); ng.connect(actx.destination); noise.start();
   } catch (e) { actx = null; }
 }
 function beep(freq, dur = 0.15, type = 'square', vol = 0.12, slide = 0) {
@@ -1100,6 +1108,7 @@ function aiNana(m, dt) {
 
 function aiBurrower(m, dt) {
   const p = G.player;
+  if (p.node === G.safeNode || p.hidden) return;
   if (m.state === 'idle') {
     if (p.locked || Math.random() < 0.005) { m.node = p.node; m.state = 'crack'; m.timer = 2.2; }
   } else if (m.state === 'crack') {
@@ -1244,6 +1253,7 @@ function aiTemp(m, dt) {
 
 function aiDrip(m, dt) {
   const p = G.player;
+  if (p.node === G.safeNode || p.hidden) { m.dwell = 0; return; }
   if (m.node === p.node) {
     if (!p.moving) { m.dwell = (m.dwell || 0) + dt; if (m.dwell >= 1.5) return killPlayer(m); }
     else m.dwell = 0;
@@ -2343,6 +2353,12 @@ function loop(now) {
         nearest = Math.min(nearest, v(m.node).distanceTo(v(p.node)));
       }
       if (nearest < 5) beep(nearest < 2 ? 95 : 70, 0.08, 'sawtooth', nearest < 2 ? 0.1 : 0.04, -20);
+    }
+    G.ambientClock = (G.ambientClock ?? 10) - dt;
+    if (G.ambientClock <= 0) {
+      G.ambientClock = 8 + Math.random() * 9;
+      if (Math.random() < 0.5) beep(160 + Math.random() * 120, 0.35, 'sawtooth', 0.035, -60);
+      else beep(320, 0.06, 'sine', 0.045);
     }
     updateHUD(dt);
   }
