@@ -23,7 +23,7 @@ const ITEMS = {
   meat:    { name: 'Mystery Meat', price: 4, desc: 'Teleport to a random spot; shakes followers' },
   mask:    { name: 'Gas Mask',   price: 5, desc: '30s proof against Exterminator gas' },
   map:     { name: 'Extra Map', price: 4, desc: 'Restore your snatched paper map' },
-  degreaser:{ name: 'Degreaser', price: 3, desc: 'Scrub leech goop off anywhere' },
+  degreaser:{ name: 'Degreaser', price: 4, desc: 'Scrub leech goop off anywhere' },
 };
 
 // Chapter 1 roster per night (featured first)
@@ -95,6 +95,8 @@ const G = {
   mapUp: false,
   mapTaken: false,
   mapRolled: false,
+  gpsJam: false,
+  gpsProtected: false,
   reviveUsed: false,
   frozen: null,
   podEscapeUsed: false,
@@ -584,7 +586,7 @@ function resetPlayer() {
   };
   for (const m of G.monsters) scene.remove(m.mesh);
   G.caps = 4; G.pockets = []; G.effects = {};
-  G.lampOn = true; G.mapUp = false; G.mapTaken = false; G.mapRolled = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
+  G.lampOn = true; G.mapUp = false; G.mapTaken = false; G.mapRolled = false; G.gpsJam = false; G.gpsProtected = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
   G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0; G.motherEscape = false;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
@@ -712,7 +714,7 @@ function useItem(slot) {
     promptEl.textContent = 'The meat tugs you somewhere random; the pack loses your trail.';
   }
   else if (id === 'mask') { addEffect('MASK', 30); }
-  else if (id === 'map') { G.mapTaken = false; promptEl.textContent = 'You unfold a fresh paper map.'; }
+  else if (id === 'map') { G.mapTaken = false; G.gpsJam = false; G.gpsProtected = true; promptEl.textContent = 'You unfold a fresh paper map; the GPS holds steady the rest of the night.'; }
   else if (id === 'degreaser') {
     if (!G.effects.goop) { promptEl.textContent = 'You have no goop to scrub off.'; return; }
     delete G.effects.goop;
@@ -1393,6 +1395,9 @@ function aiDeadAir(m, dt) {
   const p = G.player;
   if (!G.lampOn || G.effects.SMOKE) return;
   m.node = stepToward(m.node, p.node);
+  if (!G.gpsProtected && distNodes(m.node, p.node) <= 2) {
+    G.gpsJam = true; G.mapUp = false; mapEl.classList.add('hidden');
+  }
   if (m.node === p.node) return killPlayer(m);
 }
 
@@ -2113,6 +2118,7 @@ function toggleLamp() {
 
 function toggleMap() {
   if (G.mapTaken) { promptEl.textContent = 'Your map was snatched. Unfold an extra map to get it back.'; return; }
+  if (G.gpsJam) { promptEl.textContent = 'Your GPS is jammed by Dead Air — unfold an extra map to fix it.'; return; }
   G.mapUp = !G.mapUp;
   mapEl.classList.toggle('hidden', !G.mapUp);
   if (G.mapUp) drawMap();
@@ -2285,8 +2291,8 @@ function drawMap() {
     // the wiki only puts the listed things on it.
   }
 
-  // you: a red arrow pointing down the pipe you are facing. Insane has no GPS.
-  if (G.diff !== 'insane') {
+  // you: a red arrow pointing down the pipe you are facing. Insane has no GPS; Dead Air jams it.
+  if (G.diff !== 'insane' && !G.gpsJam) {
   const ax = sx(p.node), ay = sz(p.node);
   const fn = p.facing != null ? p.facing : p.node;
   let dx = sx(G.nodes[fn].x) - ax, dy = sz(G.nodes[fn].z) - ay;
@@ -2299,6 +2305,7 @@ function drawMap() {
   svg += `<polygon points="${tipX},${tipY} ${bx + nx * 4},${by + ny * 4} ${bx - nx * 4},${by - ny * 4}" fill="${MRED}" stroke="#f3ead2" stroke-width="2.2"/>`;
   svg += `<polygon points="${tipX},${tipY} ${bx + nx * 4},${by + ny * 4} ${bx - nx * 4},${by - ny * 4}" fill="${MRED}" stroke="${MRED}" stroke-width="0.8"/>`;
   }
+  if (G.gpsJam) svg += `<text x="150" y="40" font-size="8" fill="${MRED}" text-anchor="middle">GPS JAMMED</text>`;
 
   // legend, pencil notes in the margin
   const ly = 268;

@@ -139,7 +139,7 @@ pocket slots are tappable.
 - **The Gardener** — patrols the Growth and closes in on anyone nearby; go round.
 - **The Wrong Nook** — a fake hiding hole that is a mouth; never hide in its nook.
 - **The Leeches** — wait in goo puddles and drink your battery; back away or burn them off with a flare.
-- **Dead Air** — drifts toward the brightest player; go dark to lose it.
+- **Dead Air** — drifts toward the brightest player; go dark to lose it. Up close it jams your GPS; an Extra Map restores it and keeps it from jamming you again that night.
 - **The Shift Change** — the old crews stampede one ring route; get off the loop.
 - **The Choir** — rooted in a wall; nearby it slows you and drains battery; a flare jams it.
 - **Randal, Overgrown** — Randal's chase, now with random portal hops.
@@ -152,8 +152,10 @@ Energy Drink (faster crawl), Smoke Bomb (hidden 8 s), Wrench (finishes the open
 job instantly / repels what lurks, then snaps), Tin Can (clatter pulls Randal
 and the Grinner off your trail), Glow Stick (green glow draws moths away 2 min),
 Mystery Meat (teleports to a random spot, shakes followers), Gas Mask (30 s
-proof against Exterminator gas), Extra Map (restores a snatched paper map),
-Degreaser (scrub leech goop off anywhere; only consumed when gooped).
+proof against Exterminator gas), Extra Map (restores a snatched map and fixes
+a Dead Air GPS jam, with GPS immunity the rest of the night),
+Degreaser (4 caps, scrub leech goop off anywhere; only consumed when gooped),
+Nana's Cookie (free, from a polite hug; warmth + lamp battery).
 
 ## Roadmap
 
