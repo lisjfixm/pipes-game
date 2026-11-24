@@ -5,10 +5,10 @@ import * as THREE from './lib/three.module.js';
    ============================================================ */
 
 const DIFF = {
-  easy:    { battery: 210, warmthDrain: 4.5, monsterRate: 0.75, speed: 0.9, sight: 1 },
-  normal:  { battery: 170, warmthDrain: 6.0, monsterRate: 1.0,  speed: 1.0, sight: 1 },
-  hard:    { battery: 130, warmthDrain: 8.0, monsterRate: 1.25, speed: 1.12, sight: 1 },
-  insane:  { battery: 105, warmthDrain: 11,  monsterRate: 1.5,  speed: 1.25, sight: 1 },
+  easy:    { battery: 210, warmthDrain: 4.5, monsterRate: 0.75, speed: 0.9, sight: 1, pod: 120 },
+  normal:  { battery: 170, warmthDrain: 6.0, monsterRate: 1.0,  speed: 1.0, sight: 1, pod: 90 },
+  hard:    { battery: 130, warmthDrain: 8.0, monsterRate: 1.25, speed: 1.12, sight: 1, pod: 60 },
+  insane:  { battery: 105, warmthDrain: 11,  monsterRate: 1.5,  speed: 1.25, sight: 1, pod: 45 },
 };
 
 const ITEMS = {
@@ -95,6 +95,8 @@ const G = {
   mapTaken: false,
   mapRolled: false,
   reviveUsed: false,
+  frozen: null,
+  podEscapeUsed: false,
   time: 0,
   started: false,
   shiftDone: false,
@@ -571,6 +573,7 @@ function resetPlayer() {
   G.dropped = [];
   G.decoy = null; G.glow = null;
   G.reviveUsed = false;
+  G.frozen = null; G.podEscapeUsed = false;
 }
 
 function placePlayerCamera() {
@@ -849,6 +852,27 @@ function playerPinned(m, reason) {
   m.state = 'pin'; m.reason = reason;
 }
 
+function freezePlayer(monster) {
+  if (G.state !== 'playing' || G.frozen) return;
+  G.frozen = { t: DIFF[G.diff].pod, monster };
+  G.player.locked = true;
+  beep(120, 0.5, 'sawtooth', 0.2);
+  promptEl.textContent = 'Locked in a freeze pod! Mash E / Space; break out once the light flashes.';
+}
+
+function smashPod() {
+  if (!G.frozen) return;
+  if (G.frozen.t <= 12 && !G.podEscapeUsed) {
+    G.frozen = null; G.podEscapeUsed = true;
+    G.player.locked = false;
+    promptEl.textContent = 'You smash out of the freeze pod!';
+    beep(600, 0.15, 'triangle', 0.14);
+  } else {
+    G.frozen.t -= 3;
+    beep(200, 0.05, 'square', 0.08);
+  }
+}
+
 function killPlayer(monster) {
   if (G.state !== 'playing') return;
   if (G.chapter === 3 && G.cureCarry > 0) {
@@ -863,8 +887,7 @@ function killPlayer(monster) {
   beep(150, 0.7, 'sawtooth', 0.22, -110);
 }
 
-function journalHint(kind) {
-  const hints = {
+function journalHint(kind) {  const hints = {
     maw: 'It only comes out while your lamp is on. Switch the heat lamp off and wait for it to sink back.',
     randal: 'Break line of sight down his pipe. He is a little slower than you — round a corner and he loses you.',
     drooler: 'It pins you in a corner. Get your paper map (M) up and hold it there until it leaves.',
@@ -943,7 +966,7 @@ function aiRandal(m, dt) {
     if (G.effects.smoke) { m.state = 'roam'; return; }
     // step toward player node
     m.node = stepToward(m.node, p.node);
-    if (m.node === p.node) return killPlayer(m);
+    if (m.node === p.node) return freezePlayer(m);
     if (distNodes(m.node, p.node) > (G.lampOn ? 5 : 3)) m.state = 'roam';
   }
 }
@@ -1312,7 +1335,7 @@ function aiRandalOG(m, dt) {
     if (distNodes(m.node, p.node) <= 4) m.state = 'chase';
   } else {
     m.node = stepToward(m.node, p.node);
-    if (m.node === p.node) return killPlayer(m);
+    if (m.node === p.node) return freezePlayer(m);
     if (distNodes(m.node, p.node) > 6) m.state = 'roam';
   }
 }
@@ -1931,6 +1954,7 @@ addEventListener('keydown', (e) => {
     return;
   }
   if (G.state !== 'playing') return;
+  if (G.frozen && (e.code === 'Space' || e.code === 'KeyE')) { smashPod(); return; }
   if (e.code === 'Space' && G.marcoWindow > 0) {
     G.marcoWindow = 0;
     promptEl.textContent = 'POLO! It heard you — move away from here.';
@@ -2084,6 +2108,9 @@ function drawMap() {
       svg += `<line x1="${x}" y1="${y}" x2="${x + 3.5}" y2="${y + 3.5}" stroke="${MINK}" stroke-width="1.2"/>`;
     } else if (G.dropped.includes(n.id)) {
       svg += `<circle cx="${x}" cy="${y}" r="2.6" fill="#e8c15a" stroke="#8a6a20" stroke-width="1"/>`;
+    } else if (G.frozen && n.id === p.node) {
+      svg += `<rect x="${x - 5}" y="${y - 5}" width="10" height="10" rx="1.5" fill="none" stroke="#5aa8ff" stroke-width="1.6"/>`;
+      svg += `<text x="${x}" y="${y + 16}" font-size="7" fill="#5aa8ff" text-anchor="middle">${Math.ceil(G.frozen.t)}</text>`;
     } else if (G.glow && G.glow.node === n.id) {
       svg += `<circle cx="${x}" cy="${y}" r="3.2" fill="none" stroke="#5ee87a" stroke-width="1.4"/>`;
       svg += `<circle cx="${x}" cy="${y}" r="1.2" fill="#5ee87a"/>`;
@@ -2243,6 +2270,11 @@ function loop(now) {
     }
     if (p.battery <= 0) { G.lampOn = false; lampLight.visible = lampGlow.visible = false; }
     if (p.warmth <= 0) return killPlayer({ name: 'the Cold', kind: 'cold' });
+    if (G.frozen) {
+      G.frozen.t -= dt;
+      promptEl.textContent = `Freeze pod — ${Math.ceil(G.frozen.t)}s · mash E / Space to break out`;
+      if (G.frozen.t <= 0) return killPlayer(G.frozen.monster);
+    }
     // effects timers
     for (const k of Object.keys(G.effects)) { G.effects[k] -= dt; if (G.effects[k] <= 0) delete G.effects[k]; }
     if (G.decoy && --G.decoy.t <= 0) G.decoy = null;
@@ -2282,7 +2314,7 @@ window.__dbg = {
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
   wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
-  useItem, buyItem, openShop, toggleMap,
+  useItem, buyItem, openShop, toggleMap, smashPod,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },
