@@ -58,7 +58,9 @@ pocket slots are tappable.
   vending machine (PIPE-MART / VENT-O-MAT / SAP STOP by chapter), desk radio and
   How-to guide, map pile, posters, pet bed; Ch3 cauldron + wash barrel; Ch1
   Night 10 flare box. Clock in/out from here.
-- Bottle caps scattered in the pipes; 4-slot pockets; timed effects bar.
+- Bottle caps scattered in the pipes; 4-slot pockets; timed effects bar. Stock rotates
+  by night: gas masks with the Exterminator, extra maps with the Drooler/Flesh,
+  degreasers in Chapter 3.
 - All six Chapter 1 job mini-games: pressure gauge (4 hits), valve wheel
   (horizontal, 3), leaks (clamp 3 spurting slots), bleed valve (close the screw
   on the water window, 2), weld seam (4 segments in order), junction box wires

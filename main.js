@@ -1569,9 +1569,17 @@ function nearestInteractable() {
   return null;
 }
 
+function shopStock(id) {
+  const roster = nightTable()[G.night - 1].roster;
+  if (id === 'mask') return roster.includes('exterminator');
+  if (id === 'map') return roster.includes('drooler') || roster.includes('flesh');
+  if (id === 'degreaser') return G.chapter === 3;
+  return true;
+}
+
 function openShop() {
   G.state = 'modal';
-  const rows = Object.entries(ITEMS).map(([id, it]) => `
+  const rows = Object.entries(ITEMS).filter(([id]) => shopStock(id)).map(([id, it]) => `
     <div class="shop-item">
       <div><strong>${it.name}</strong><br><span style="color:var(--muted);font-size:12px">${it.desc}</span></div>
       <button data-buy="${id}" ${G.caps < it.price || G.pockets.length >= 4 ? 'disabled' : ''}>${it.price} caps</button>
@@ -2421,7 +2429,10 @@ function loop(now) {
       else if (G.chapter === 3) {
         if (!p.hidden) G.darkTimer = (G.darkTimer || 0) + dt;
         if (G.darkTimer >= 40) return killPlayer({ name: 'The Growth', kind: 'growth' });
-      } else p.warmth -= DIFF[G.diff].warmthDrain * dt;
+      } else {
+        const coldMult = (G.chapter === 1 && G.night === 3) ? 0.7 : (G.chapter === 1 && G.night === 5) ? 1.4 : 1;
+        p.warmth -= DIFF[G.diff].warmthDrain * coldMult * dt;
+      }
     }
     if (p.battery <= 0) { G.lampOn = false; lampLight.visible = lampGlow.visible = false; }
     if (p.warmth <= 0) return killPlayer({ name: 'the Cold', kind: 'cold' });
