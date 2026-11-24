@@ -112,6 +112,7 @@ const G = {
   cureCarry: 0,
   cureDeposited: 0,
   portals: [],
+  portalPair: {},
   flareReadyAt: 0,
   bossPhase: 'brew',   // brew | fight | escape  (Ch3 Night 10)
   jar: false,
@@ -268,16 +269,20 @@ function buildMap() {
       G.safeDist[nb] = G.safeDist[c] + 1; q.push(nb);
     }
   }
-  // Chapter 3: paired purple portal holes in two far dead ends.
+  // Chapter 3: paired purple portal holes, two pairs across the map.
   G.portals = [];
+  G.portalPair = {};
   if (G.chapter === 3) {
     const ends = G.nodes.filter(n => n.neighbors.length === 1 && n.id !== safe);
     const far = G.nodes.filter(n => n.id !== safe && !n.nook)
       .sort((a, b) => (G.safeDist[b.id] ?? 0) - (G.safeDist[a.id] ?? 0));
-    const pair = (ends.length >= 2 ? ends : far).slice(0, 2);
-    if (pair.length === 2) {
-      pair.forEach(n => { n.portal = true; });
-      G.portals = [pair[0].id, pair[1].id];
+    const pool = (ends.length >= 4 ? ends : far);
+    const slots = pool.slice(0, Math.min(4, pool.length));
+    for (let i = 0; i + 1 < slots.length; i += 2) {
+      const a = slots[i].id, b = slots[i + 1].id;
+      G.nodes[a].portal = true; G.nodes[b].portal = true;
+      G.portalPair[a] = b; G.portalPair[b] = a;
+      G.portals.push(a, b);
     }
   }
   // Chapter 2 night 8: zap gates wired across some ducts.
@@ -1607,10 +1612,15 @@ function wakeBoss() {
 }
 
 function farNodeFrom(nodeId) {
+  const dist = { [nodeId]: 0 };
+  const q = [nodeId];
+  while (q.length) {
+    const c = q.shift();
+    for (const nb of G.nodes[c].neighbors) if (!(nb in dist)) { dist[nb] = dist[c] + 1; q.push(nb); }
+  }
   let best = G.safeNode, bd = -1;
   for (const n of G.nodes) {
-    if (n.id === nodeId) continue;
-    const d = G.safeDist[n.id] ?? 0;
+    const d = dist[n.id] ?? 0;
     if (d > bd) { bd = d; best = n.id; }
   }
   return best;
@@ -1988,7 +1998,7 @@ function interact() {
   }
   else if (it.kind === 'job') openJob(it.node);
   else if (it.kind === 'portal') {
-    const twin = G.portals.find(id => id !== it.node.id);
+    const twin = G.portalPair[it.node.id];
     if (twin != null) {
       p.node = twin; p.moving = null; p.hidden = false;
       p.facing = G.nodes[twin].neighbors[0] ?? null;
