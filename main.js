@@ -1593,15 +1593,15 @@ const WIRE_COL = ['#e06c5f', '#6fa8e0', '#e8c15a'];
 // Chapter-specific task names mapped onto the shared mini-game mechanics.
 const DISPLAY = {
   2: {
-    valve:   { t: 'Air Filter',    l: 'Latch the clean filter in' },
-    pressure:{ t: 'Duct Fan',      l: 'Keep the fan needle in the green' },
-    weld:    { t: 'Split Duct',    l: 'Drag tape along each whistling split' },
-    leaks:   { t: 'Blocked Grille',l: 'Drag the junk out of the grille' },
-    bleed:   { t: 'Access Panel', l: 'Close the breaker screw in time' },
+    valve:   { t: 'Filter',    l: 'Pull the dirty filter, slide the clean one in, latch it' },
+    pressure:{ t: 'Fan',       l: 'Tap the stalled fan up to speed, keep the needle in the green' },
+    weld:    { t: 'Tape',      l: 'Drag along each whistling split to tape it' },
+    leaks:   { t: 'Grille',    l: 'Drag all the junk out of the grille' },
+    bleed:   { t: 'Panel',     l: 'Unscrew the screws, lift the panel, flip the breaker' },
   },
   3: {
-    bleed: { t: 'Glow Sap',    l: 'Jam the spigot and stop in the green' },
-    weld:  { t: 'Bloom Heart', l: 'Slash every vine, drop the bloom in the jar' },
+    bleed: { t: 'Sap Pod',     l: 'Jam the spigot, drain the sap, stop in the green' },
+    weld:  { t: 'Bound Bloom', l: 'Slash every vine, drop the bloom in the jar' },
     leaks: { t: 'Spore Pod',   l: 'Catch the glowing spores as they float up' },
   },
 };
