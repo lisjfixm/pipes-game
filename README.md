@@ -158,7 +158,8 @@ proof against Exterminator gas), Extra Map (restores a snatched paper map).
 - Full vent-map (square duct) layout. The five vent jobs (filter, fan, tape,
   grille, panel) and the three cure tasks (sap pod, bound bloom, spore pod) are
   themed onto the shared mini-game mechanics; bespoke UIs still pending.
-- More sound: per-monster proximity cues, footsteps, crawling creak.
+- More sound: per-monster proximity cues are in; per-step footsteps and
+  ambient steam/wind layers still pending.
 - Monster portrait / journal pages in the safe room guide book.
 - Custom Night and Endless Mode.
 - Mobile / controller input.
