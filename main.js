@@ -1004,9 +1004,10 @@ function aiRandal(m, dt) {
     }
     const d = distNodes(m.node, p.node);
     const sight = G.lampOn ? 4 : 2;
-    if (d <= sight && !G.effects.smoke) { m.state = 'chase'; m.timer = 0; }
+    if (d <= sight && !G.effects.SMOKE) { m.state = 'chase'; m.timer = 0; }
   } else if (m.state === 'chase') {
-    if (G.effects.smoke) { m.state = 'roam'; return; }
+    if (G.effects.SMOKE) { m.state = 'roam'; return; }
+    if (G.effects.FLARE) { m.state = 'roam'; m.node = stepToward(m.node, G.safeNode); return; }
     // step toward player node
     m.node = stepToward(m.node, p.node);
     if (m.node === p.node) return freezePlayer(m);
@@ -1036,7 +1037,7 @@ function aiDrooler(m, dt) {
       playerPinned(m, 'drooler');
     }
   } else if (m.state === 'pin') {
-    if (G.mapUp) {
+    if (G.mapUp || G.effects.FLARE) {
       m.timer += dt;
       if (m.timer >= 3) {
         if (!G.mapRolled && !G.mapTaken && Math.random() < 0.15) {
@@ -1060,7 +1061,7 @@ function aiMoths(m, dt) {
     if (Math.random() < 0.01 * DIFF[G.diff].monsterRate) { m.state = 'pass'; m.node = p.node; m.timer = 3; }
   } else if (m.state === 'pass' || m.state === 'pin') {
     if (m.node === p.node) {
-      if (G.effects.flare) { m.state = 'idle'; p.locked = false; return; }
+      if (G.effects.FLARE) { m.state = 'idle'; p.locked = false; return; }
       if (G.lampOn) { playerPinned(m, 'moths'); }
       else { m.state = 'idle'; p.locked = false; removeMonster(m); return; }
     }
@@ -1141,7 +1142,7 @@ function aiTollman(m, dt) {
 
 function aiForeman(m, dt) {
   const p = G.player;
-  if (G.effects.smoke || p.node === G.safeNode || p.hidden) { m.state = 'idle'; return; }
+  if (G.effects.SMOKE || p.node === G.safeNode || p.hidden) { m.state = 'idle'; return; }
   if (m.state === 'idle') m.state = 'chase';
   m.node = stepToward(m.node, p.node);
   if (m.node === p.node) return killPlayer(m);
@@ -1151,14 +1152,14 @@ function aiForeman(m, dt) {
 function aiGrinner(m, dt) {
   const p = G.player;
   if (G.decoy && G.decoy.t > 0) { m.node = stepToward(m.node, G.decoy.node); m.state = 'roam'; return; }
-  if (G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
+  if (G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
   if (m.state === 'idle' || m.state === 'roam') {
     m.state = 'roam';
     if (m.timer <= 0) { m.node = stepToward(m.node, p.node); m.timer = 1.1 / DIFF[G.diff].speed; }
     const sight = G.lampOn ? 5 : 3;
     if (distNodes(m.node, p.node) <= sight) { m.state = 'chase'; m.timer = 0; }
   } else if (m.state === 'chase') {
-    if (G.effects.smoke) { m.state = 'roam'; return; }
+    if (G.effects.SMOKE) { m.state = 'roam'; return; }
     m.node = stepToward(m.node, p.node);
     if (m.node === p.node) return killPlayer(m);
     if (distNodes(m.node, p.node) > (G.lampOn ? 6 : 4)) m.state = 'roam';
@@ -1190,7 +1191,7 @@ function aiExterminator(m, dt) {
       m.state = 'fog'; m.timer = 4; m.dwell = 0;
     }
   } else if (m.state === 'fog') {
-    if (p.node === m.fogNode && !G.effects.smoke && !G.effects.MASK) {
+    if (p.node === m.fogNode && !G.effects.SMOKE && !G.effects.MASK) {
       m.dwell += dt;
       if (m.dwell >= 1.2) return killPlayer(m);
     } else m.dwell = 0;
@@ -1267,7 +1268,7 @@ function aiDrip(m, dt) {
 function aiMother(m, dt) {
   const p = G.player;
   if (!G.shiftDone) { m.state = 'sleep'; return; }
-  if (G.effects.smoke || p.node === G.safeNode || !G.lampOn) { m.state = 'idle'; return; }
+  if (G.effects.SMOKE || p.node === G.safeNode || !G.lampOn) { m.state = 'idle'; return; }
   m.node = stepToward(m.node, p.node);
   if (m.node === p.node) return killPlayer(m);
 }
@@ -1286,7 +1287,7 @@ function aiYoung(m, dt) {
 function aiDale(m, dt) {
   const p = G.player;
   const blinded = !G.lampOn && !G.effects.goop; // gooped: he knows where you are
-  if (blinded || G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
+  if (blinded || G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
   if (m.state !== 'chase') {
     m.timer -= dt;
     if (m.timer <= 0) { m.node = stepToward(m.node, p.node); m.timer = 1.4; }
@@ -1312,7 +1313,7 @@ function aiMarco(m, dt) {
 
 function aiGardener(m, dt) {
   const p = G.player;
-  if (G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
+  if (G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
   if (m.state !== 'chase') {
     m.timer -= dt;
     if (m.timer <= 0) { const nb = G.nodes[m.node].neighbors; m.node = nb[Math.floor(Math.random() * nb.length)]; m.timer = 2; }
@@ -1336,7 +1337,7 @@ function aiWrongNook(m, dt) {
 
 function aiLeeches(m, dt) {
   const p = G.player;
-  if (G.effects.flare) { m.state = 'idle'; m.node = stepToward(m.node, G.safeNode); return; }
+  if (G.effects.FLARE) { m.state = 'idle'; m.node = stepToward(m.node, G.safeNode); return; }
   if (m.state === 'idle') {
     m.timer -= dt;
     if (m.timer <= 0) {
@@ -1349,7 +1350,7 @@ function aiLeeches(m, dt) {
 
 function aiDeadAir(m, dt) {
   const p = G.player;
-  if (!G.lampOn || G.effects.smoke) return;
+  if (!G.lampOn || G.effects.SMOKE) return;
   m.node = stepToward(m.node, p.node);
   if (m.node === p.node) return killPlayer(m);
 }
@@ -1364,13 +1365,13 @@ function aiShiftChange(m, dt) {
 
 function aiChoir(m, dt) {
   const p = G.player;
-  if (G.effects.flare) { m.timer -= dt; return; }
+  if (G.effects.FLARE) { m.timer -= dt; return; }
   if (distNodes(m.node, p.node) <= 1) { p.slow = true; p.battery -= dt * 6; }
 }
 
 function aiRandalOG(m, dt) {
   const p = G.player;
-  if (G.effects.smoke || p.node === G.safeNode) { m.state = 'roam'; return; }
+  if (G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
   m.timer -= dt;
   if (m.timer <= 0) {
     const c = G.nodes.filter(n => n.id !== G.safeNode);
@@ -1388,7 +1389,7 @@ function aiRandalOG(m, dt) {
 function aiTwoOfThem(m, dt) {
   const p = G.player;
   if (G.bossPhase === 'brew' || G.bossPhase === 'escape') { m.state = 'idle'; return; }
-  if (G.effects.smoke || p.node === G.safeNode) { m.state = 'idle'; return; }
+  if (G.effects.SMOKE || p.node === G.safeNode) { m.state = 'idle'; return; }
   // Marco half: periodic MARCO call with a 3 s POLO window.
   G.marcoTimer -= dt;
   if (G.marcoWindow > 0) {
@@ -1401,7 +1402,7 @@ function aiTwoOfThem(m, dt) {
     beep(220, 0.2, 'sawtooth', 0.16);
   }
   // Dale half: it sees the night vision / a lit flare down the hall.
-  if (G.lampOn || G.effects.flare) m.node = stepToward(m.node, p.node);
+  if (G.lampOn || G.effects.FLARE) m.node = stepToward(m.node, p.node);
   if (m.node === p.node) initiateGrab(m);
 }
 
