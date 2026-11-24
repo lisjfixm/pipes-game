@@ -1447,7 +1447,7 @@ function aiShiftChange(m, dt) {
 function aiChoir(m, dt) {
   const p = G.player;
   if (G.effects.FLARE) { m.timer -= dt; return; }
-  if (distNodes(m.node, p.node) <= 2) { p.slow = true; p.battery -= dt * 6; }
+  if (distNodes(m.node, p.node) <= 2) { p.slow = true; p.warmth -= dt * 6; }
 }
 
 function aiRandalOG(m, dt) {
