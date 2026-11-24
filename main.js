@@ -1423,7 +1423,7 @@ function aiLeeches(m, dt) {
     }
   }
   if (p.moving && p.moving.back) { m.state = 'idle'; m.node = stepToward(m.node, G.safeNode); return; }
-  if (m.node === p.node) { p.battery -= dt * 8; addEffect('goop', 6); }
+  if (m.node === p.node) { p.battery -= dt * 8; if (p.battery <= 0) addEffect('goop', 6); }
 }
 
 function aiDeadAir(m, dt) {
