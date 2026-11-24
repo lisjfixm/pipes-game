@@ -1527,9 +1527,8 @@ function startEscape() {
 }
 
 function finaleWin() {
-  G.state = 'card';
   for (const m of [...G.monsters]) removeMonster(m);
-  showNightCard('CHAPTER 3 CLEAR', 'You made it home. (Prototype ends here.)');
+  showEndCard('CHAPTER 3 CLEAR', 'You made it home. (Prototype ends here.)');
 }
 
 function removeMonster(m) {
@@ -1988,6 +1987,13 @@ function showNightCard(title, sub) {
   setTimeout(() => nightCard.classList.add('hidden'), 2600);
 }
 
+function showEndCard(title, sub) {
+  G.state = 'card';
+  nightCard.innerHTML = `<h1>${title}</h1><p>${sub}</p><button id="end-title" style="margin-top:16px">Return to title</button>`;
+  nightCard.classList.remove('hidden');
+  $('end-title').onclick = () => location.reload();
+}
+
 function bossWin() {
   for (const m of G.monsters) scene.remove(m.mesh);
   G.monsters = [];
@@ -2009,8 +2015,7 @@ function clockOut() {
   const tbl = nightTable();
   if (G.night > tbl.length) {
     if (G.chapter < 3) { G.chapter++; G.night = 1; startNight(); return; }
-    G.state = 'card';
-    showNightCard('CHAPTER 3 CLEAR', 'You made it home. (Prototype ends here.)');
+    showEndCard('CHAPTER 3 CLEAR', 'You made it home. (Prototype ends here.)');
     return;
   }
   startNight();
@@ -2408,6 +2413,7 @@ function loop(now) {
     if (inSafe) {
       p.battery = Math.min(DIFF[G.diff].battery, p.battery + 25 * dt);
       p.warmth = Math.min(100, p.warmth + 20 * dt);
+      if (G.gpsJam) { G.gpsJam = false; promptEl.textContent = 'Back home — your GPS finds its signal again.'; }
     } else {
       if (G.lampOn) { p.battery -= dt; G.darkTimer = 0; }
       else if (G.chapter === 3) {
