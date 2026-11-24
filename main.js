@@ -2648,7 +2648,9 @@ $('revive-btn').onclick = () => {
   const p = G.player;
   p.node = G.safeNode; p.moving = null; p.locked = false; p.hidden = false;
   p.battery = DIFF[G.diff].battery; p.warmth = 100; p.speedBoost = 0; p.slow = false; p.nookTimer = 0;
+  p.mapTimer = 0; p.mapWarn = false;
   G.effects = {};
+  G.gpsJam = false;
   G.frozen = null; G.behind = null; G.backStreak = 0;
   G.decoy = null; G.glow = null;
   if (pressure) closeModal();
