@@ -839,6 +839,7 @@ function distNodes(a, b) {
 function updateMonsters(dt) {
   const p = G.player;
   for (const m of G.monsters) {
+    if (p.node === G.safeNode) continue; // safe room is a sanctuary
     m.timer -= dt;
     switch (m.kind) {
       case 'maw': aiMaw(m, dt); break;
