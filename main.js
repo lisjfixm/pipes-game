@@ -598,7 +598,7 @@ function resetPlayer() {
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
   G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0; G.motherEscape = false;
   G.motherGrowth = false; G.growths = []; G.growthBurned = 0;
-  G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
+  G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0; G.poloAnswer = false;
   G.dropped = [];
   G.decoy = null; G.glow = null; G.spawnCd = 0;
   G.reviveUsed = false;
@@ -1353,7 +1353,7 @@ function aiYoung(m, dt) {
 // ---------- Chapter 3: The Growth ----------
 function aiDale(m, dt) {
   const p = G.player;
-  const blinded = !G.lampOn && !G.effects.goop; // gooped: he knows where you are
+  const blinded = !G.lampOn && !G.effects.FLARE && !G.effects.goop; // gooped / lit: he knows where you are
   if (blinded || G.effects.SMOKE || p.node === G.safeNode) { m.state = 'roam'; return; }
   if (m.state !== 'chase') {
     m.timer -= dt;
@@ -1368,9 +1368,18 @@ function aiDale(m, dt) {
 
 function aiMarco(m, dt) {
   const p = G.player;
-  if (m.state === 'idle' || m.state === 'yell') {
-    m.state = 'yell'; m.timer -= dt;
-    if (m.timer <= 0) { m.lastSeen = p.node; m.state = 'charge'; m.timer = 2.5; }
+  if (p.node === G.safeNode || G.effects.SMOKE) { m.state = 'idle'; G.marcoWindow = 0; return; }
+  if (m.state === 'idle') {
+    m.timer -= dt;
+    if (m.timer <= 0) {
+      m.state = 'listen'; m.listen = 3; G.marcoWindow = 3;
+      promptEl.textContent = 'MARCO! — answer POLO (Space)';
+      beep(220, 0.2, 'sawtooth', 0.16);
+    }
+  } else if (m.state === 'listen') {
+    m.listen -= dt;
+    if (G.poloAnswer) { m.lastSeen = p.node; G.poloAnswer = false; }
+    if (m.listen <= 0) { m.state = 'charge'; m.timer = 2.5; G.marcoWindow = 0; }
   } else if (m.state === 'charge') {
     m.node = stepToward(m.node, m.lastSeen);
     if (m.node === p.node && !p.moving) return killPlayer(m);
@@ -2165,7 +2174,7 @@ function primaryAction() {
   if (G.frozen) { smashPod(); return; }
   if (G.behind) { struggleBehind(); return; }
   if (G.marcoWindow > 0) {
-    G.marcoWindow = 0;
+    G.marcoWindow = 0; G.poloAnswer = true;
     promptEl.textContent = 'POLO! It heard you — move away from here.';
   }
 }
@@ -2617,7 +2626,7 @@ window.__dbg = {
   spawnMonster, updateMonsters, scheduleMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
   wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, depositCure, openGuide, openSafeRoom, washGoop,
-  useItem, buyItem, openShop, toggleMap, smashPod, struggleBehind, startCrawl,
+  useItem, buyItem, openShop, toggleMap, smashPod, struggleBehind, startCrawl, primaryAction,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },
