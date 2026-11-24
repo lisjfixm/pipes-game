@@ -2285,6 +2285,11 @@ function drawMap() {
       m.loop.forEach((id, i) => { d += (i ? ' L' : 'M') + sx(G.nodes[id].x) + ',' + sz(G.nodes[id].z); });
       svg += `<path d="${d} Z" fill="none" stroke="${MORANGE}" stroke-width="3" opacity="0.25"/>`;
       svg += `<path d="${d} Z" fill="none" stroke="${MORANGE}" stroke-width="1.2" opacity="0.9"/>`;
+    } else if (m.kind === 'shiftchange' && m.loop) {
+      let d = '';
+      m.loop.forEach((id, i) => { d += (i ? ' L' : 'M') + sx(G.nodes[id].x) + ',' + sz(G.nodes[id].z); });
+      svg += `<path d="${d} Z" fill="none" stroke="#c9a24a" stroke-width="3" opacity="0.22"/>`;
+      svg += `<path d="${d} Z" fill="none" stroke="#c9a24a" stroke-width="1.2" stroke-dasharray="5 3" opacity="0.9"/>`;
     }
   }
   svg += `</g>`;
