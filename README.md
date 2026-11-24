@@ -74,7 +74,8 @@ pocket slots are tappable.
 - Chapter 3 cure loop: finish a cure task, carry its ingredient back to the safe
   room cauldron; you cannot clock out while still carrying one.
 - Four difficulties (Easy / Normal / Hard / Insane) affecting battery, warmth
-  drain, monster rate and speed.
+  drain, monster rate, speed, freeze-pod seconds and scattered caps; Insane has
+  no GPS on the paper map and Randal stays off it.
 - All three chapter night rosters and solo job counts; pick the chapter from the
   lobby. Clearing a finale carries you straight into the next chapter.
 - Night 10 boss: collect 3 cage keys from far junctions, bring them to Randal's
