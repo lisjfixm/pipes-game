@@ -112,7 +112,7 @@ pocket slots are tappable.
 - **The Moths** — swarm passes; lamp on when it reaches you pins you; turn it off.
 - **Rampage** — warning shake, then charges; safe inside a hiding nook / safe room.
 - **The Janitor** — blind, hears movement within 3 junctions; stay still while it listens.
-- **Nana** — press E to hug; never crawl away or ignore her.
+- **Nana** — press E to hug; never crawl away or ignore her. A polite hug earns a cookie that warms you and tops up the lamp battery.
 - **The Burrower** — cracks the floor under a stationary/working player; move off.
 - **The Lantern Man** — keep the lamp on near him; off in his light and he takes you.
 - **The Tollman** — sits at a junction; pay 3 caps or go round.
@@ -127,7 +127,7 @@ pocket slots are tappable.
 - **The Process Server** — serves a paper with a deadline; reach the marked junction in time.
 - **The Flesh** — waits at the end of a duct, then charges down the line; get off it.
 - **The Faceling** — haunts one hiding nook; never hide in that hole.
-- **The Temp** — undoes finished jobs; keep your lamp on it to shoo it away.
+- **The Temp** — undoes finished jobs; keep your lamp on him to shoo him away. An Energy Drink handed to him nearby bribes him to help finish jobs for a while.
 - **The Drip** — hangs overhead; drops on anyone who stops under it. Keep crawling.
 - **The Mother** — asleep until the work is done; the last job wakes her, then you have 50 s to crawl back to the safe room. She hunts your heat; stay lamp-off on the way.
 - **Her Young** — wanders in swarms; latching on slows your crawl. Step round them.

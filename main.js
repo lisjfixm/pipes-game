@@ -668,7 +668,15 @@ function useItem(slot) {
   if ((G.state !== 'playing' && !(id === 'wrench' && inJob)) || p.locked) return;
   if (id === 'cola') { p.battery = Math.min(DIFF[G.diff].battery, p.battery + DIFF[G.diff].battery / 3); }
   else if (id === 'warmer') { p.warmth = Math.min(100, p.warmth + 45); }
-  else if (id === 'energy') { p.speedBoost = 20; addEffect('SPEED', 20); }
+  else if (id === 'energy') {
+    const temp = G.monsters.find(m => m.kind === 'temp' && distNodes(m.node, p.node) <= 2);
+    if (temp) {
+      temp.bribed = true; temp.bribeT = 60; temp.state = 'idle';
+      promptEl.textContent = 'You hand the Temp the energy drink; he whistles happily and turns in some work for you.';
+      beep(660, 0.14, 'triangle', 0.12);
+    } else { p.speedBoost = 20; addEffect('SPEED', 20); }
+  }
+  else if (id === 'cookie') { p.warmth = Math.min(100, p.warmth + 45); p.battery = Math.min(DIFF[G.diff].battery, p.battery + DIFF[G.diff].battery / 3); promptEl.textContent = 'Nana\'s cookie — warm all over, lamp topped up.'; }
   else if (id === 'flare') { addEffect('FLARE', 15); }
   else if (id === 'smoke') { addEffect('SMOKE', 8); }
   else if (id === 'wrench') {
@@ -721,7 +729,7 @@ function renderPockets() {
     const id = G.pockets[i];
     const el = document.createElement('div');
     el.className = 'slot';
-    el.textContent = id ? (ITEMS[id]?.name.split(' ')[0] ?? id) : (i + 1);
+    el.textContent = id ? (id === 'cookie' ? 'Cookie' : (ITEMS[id]?.name.split(' ')[0] ?? id)) : (i + 1);
     el.onclick = () => useItem(i);
     pocketsEl.appendChild(el);
   }
@@ -1256,6 +1264,24 @@ function aiFaceling(m, dt) {
 
 function aiTemp(m, dt) {
   const p = G.player;
+  if (m.bribed) {
+    m.bribeT -= dt;
+    if (m.bribeT <= 0) { m.bribed = false; }
+    else {
+      m.timer -= dt;
+      if (m.timer <= 0) {
+        const open = G.nodes.filter(n => n.job && !n.job.done);
+        if (open.length) {
+          const j = open[0]; j.job.done = true;
+          G.jobs = G.jobs.filter(x => x !== j);
+          promptEl.textContent = 'The Temp whistles and helps finish a job for you.';
+          checkNightProgress();
+        }
+        m.timer = 14;
+      }
+    }
+    return;
+  }
   if (G.lampOn && distNodes(m.node, p.node) <= 2) { m.state = 'shoo'; m.timer = 4; m.node = stepToward(m.node, G.safeNode); return; }
   if (m.state === 'shoo') { m.timer -= dt; if (m.timer <= 0) m.state = 'idle'; return; }
   m.timer -= dt;
@@ -1699,7 +1725,7 @@ function openGuide() {
       <p><strong>Crawl:</strong> W/Up ahead · A/D turn · S back. F lamp · M map · E interact · 1–4 items.</p>
       <p><strong>Vitals:</strong> Lamp battery drains when lit; warmth drops in the cold. Both recover fast in the safe room.</p>
       <p><strong>Shift:</strong> Finish every job, get back here and clock out. In Chapter 3, carry ingredients to the cauldron before you leave.</p>
-      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you · Wrench finishes a job or repels the pack · Can draws Randal/Grinner off · Glow Stick draws the moths · Meat teleports away · Mask blocks gas · Extra Map restores a snatched map · Degreaser scrubs leech goop off anywhere.</p>
+      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you · Wrench finishes a job or repels the pack · Can draws Randal/Grinner off · Glow Stick draws the moths · Meat teleports away · Mask blocks gas · Extra Map restores a snatched map · Degreaser scrubs leech goop off anywhere · Nana's Cookie (from a polite hug) warms you and tops up the lamp.</p>
     </div>
     <div class="guide-best">${groups}</div>
     <button id="close-modal" style="margin-top:14px">Back to the room</button>`;
@@ -1987,8 +2013,9 @@ function interact() {
   if (nanaM) { // hug takes priority
     p.locked = false; nanaM.state = 'idle'; nanaM.reason = null;
     removeMonster(nanaM);
-    p.warmth = Math.min(100, p.warmth + 30);
-    p.battery = Math.min(DIFF[G.diff].battery, p.battery + 20);
+    if (G.pockets.length < 4) { G.pockets.push('cookie'); promptEl.textContent = 'Nana pinches your cheek and presses a warm cookie into your pocket.'; }
+    else { p.warmth = Math.min(100, p.warmth + 30); p.battery = Math.min(DIFF[G.diff].battery, p.battery + 20); promptEl.textContent = 'Nana pinches your cheek; you share the cookie right away.'; }
+    renderPockets();
     return;
   }
   const it = nearestInteractable();
