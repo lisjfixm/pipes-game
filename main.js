@@ -1312,7 +1312,7 @@ function aiGardener(m, dt) {
   if (m.state !== 'chase') {
     m.timer -= dt;
     if (m.timer <= 0) { const nb = G.nodes[m.node].neighbors; m.node = nb[Math.floor(Math.random() * nb.length)]; m.timer = 2; }
-    if (distNodes(m.node, p.node) <= 2) m.state = 'chase';
+    if (distNodes(m.node, p.node) <= 2 && G.cureCarry > 0) m.state = 'chase';
   } else {
     m.node = stepToward(m.node, p.node);
     if (m.node === p.node) return killPlayer(m);
@@ -2343,7 +2343,7 @@ function loop(now) {
       if (G.escapeAt <= 0) return killPlayer({ name: 'The Two of Them', kind: 'twoofthem' });
     }
 
-    if (!G.debugFreeze) { scheduleMonsters(dt); updateMonsters(dt); }
+    if (!G.debugFreeze) { p.slow = false; scheduleMonsters(dt); updateMonsters(dt); }
     // proximity cue: a low tick when something is nearby, louder up close
     proxTimer -= dt;
     if (proxTimer <= 0) {
