@@ -137,7 +137,7 @@ pocket slots are tappable.
 
 ## Monster rules implemented (Chapter 3: The Growth)
 
-- **Dale** — only sees you when your night vision is glowing; go dark and hold still.
+- **Dale** — sees your lit lamp, a burning flare, or goop on you; go dark and hold still.
 - **Marco** — blind; yells, then charges to where you answered. Move after answering.
 - **The Gardener** — patrols the Growth and closes in on anyone nearby; go round.
 - **The Wrong Nook** — a fake hiding hole that is a mouth; never hide in its nook.
