@@ -131,6 +131,7 @@ const G = {
   dropped: [],
   decoy: null,
   glow: null,
+  spawnCd: 0,
 };
 window.G = G;  // debug / headless inspection
 
@@ -599,7 +600,7 @@ function resetPlayer() {
   G.motherGrowth = false; G.growths = []; G.growthBurned = 0;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
   G.dropped = [];
-  G.decoy = null; G.glow = null;
+  G.decoy = null; G.glow = null; G.spawnCd = 0;
   G.reviveUsed = false;
   G.frozen = null; G.podEscapeUsed = false;
   G.backStreak = 0; G.behind = null;
@@ -1436,7 +1437,7 @@ function aiShiftChange(m, dt) {
 function aiChoir(m, dt) {
   const p = G.player;
   if (G.effects.FLARE) { m.timer -= dt; return; }
-  if (distNodes(m.node, p.node) <= 1) { p.slow = true; p.battery -= dt * 6; }
+  if (distNodes(m.node, p.node) <= 2) { p.slow = true; p.battery -= dt * 6; }
 }
 
 function aiRandalOG(m, dt) {
@@ -1560,6 +1561,10 @@ let proxTimer = 0;
 function scheduleMonsters(dt) {
   spawnClock -= dt;
   if (spawnClock > 0) return;
+  // nothing new arrives while you're busy (grabbed / behind / frozen / pinned / locked),
+  // and there's a cooldown after something new turns up
+  const busy = grab || G.behind || G.frozen || pressure || G.player.locked;
+  if (busy || G.time < G.spawnCd) { spawnClock = 1.5; return; }
   const roster0 = nightTable()[G.night - 1].roster;
   const roster = G.motherGrowth ? roster0.filter(k => k !== 'grinner' && k !== 'flesh') : roster0;
   const active = new Set(G.monsters.map(m => m.kind));
@@ -1569,6 +1574,7 @@ function scheduleMonsters(dt) {
   if (!missing.length) { spawnClock = 6; return; }
   if (G.monsters.length < maxOut) {
     spawnMonster(missing[Math.floor(Math.random() * missing.length)]);
+    G.spawnCd = G.time + 10;
     spawnClock = Math.max(4, 12 - jobsDone * 1.5) * 1.15 / DIFF[G.diff].monsterRate;
   } else spawnClock = 4;
 }
@@ -2276,7 +2282,7 @@ function drawMap() {
     } else if (m.kind === 'gardener') {
       svg += `<circle cx="${x}" cy="${y}" r="${ring(2)}" fill="none" stroke="${MGREEN}" stroke-width="1" opacity="0.55"/>`;
     } else if (m.kind === 'choir') {
-      svg += `<circle cx="${x}" cy="${y}" r="${ring(1)}" fill="none" stroke="${MGREEN}" stroke-width="1" stroke-dasharray="2 2" opacity="0.6"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="${ring(2)}" fill="none" stroke="${MGREEN}" stroke-width="1" stroke-dasharray="2 2" opacity="0.6"/>`;
     } else if (m.kind === 'flesh') {
       const tx = sx(G.nodes[p.node].x), ty = sz(G.nodes[p.node].z);
       svg += `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}" stroke="${MRED}" stroke-width="1.4" stroke-dasharray="6 4" opacity="0.85"/>`;
