@@ -107,6 +107,7 @@ const G = {
   marcoTimer: 0,
   marcoWindow: 0,
   jarReadyAt: 0,
+  dropped: [],
 };
 window.G = G;  // debug / headless inspection
 
@@ -556,6 +557,7 @@ function resetPlayer() {
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
   G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
+  G.dropped = [];
 }
 
 function placePlayerCamera() {
@@ -804,6 +806,10 @@ function playerPinned(m, reason) {
 
 function killPlayer(monster) {
   if (G.state !== 'playing') return;
+  if (G.chapter === 3 && G.cureCarry > 0) {
+    G.dropped.push(G.player.node);
+    G.cureCarry = 0;
+  }
   G.state = 'death';
   deathTitle.textContent = `CAUGHT BY ${monster.name.toUpperCase()}`;
   deathText.textContent = journalHint(monster.kind);
@@ -2014,6 +2020,8 @@ function drawMap() {
     } else if (n.key) {
       svg += `<circle cx="${x - 2}" cy="${y - 2}" r="2.4" fill="none" stroke="${MINK}" stroke-width="1.2"/>`;
       svg += `<line x1="${x}" y1="${y}" x2="${x + 3.5}" y2="${y + 3.5}" stroke="${MINK}" stroke-width="1.2"/>`;
+    } else if (G.dropped.includes(n.id)) {
+      svg += `<circle cx="${x}" cy="${y}" r="2.6" fill="#e8c15a" stroke="#8a6a20" stroke-width="1"/>`;
     } else if (n.portal) {
       svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#8a4ad0" stroke-width="1.4" stroke-dasharray="2.5 2"/>`;
       svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#8a4ad0"/>`;
@@ -2150,6 +2158,8 @@ function loop(now) {
         }
         if (arr.caps > 0) { G.caps += arr.caps; arr.caps = 0; }
         if (arr.key) { arr.key = false; G.keysHeld++; promptEl.textContent = `Cage key picked up · ${G.keysHeld} held`; }
+        const di = G.dropped.indexOf(arr.id);
+        if (di >= 0) { G.dropped.splice(di, 1); G.cureCarry++; promptEl.textContent = 'Picked up the dropped ingredient.'; }
       }
     }
     // vitals
