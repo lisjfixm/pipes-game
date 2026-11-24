@@ -22,6 +22,7 @@ const ITEMS = {
   glow:    { name: 'Glow Stick', price: 2, desc: 'Drop green glow; draws moths away 2 min' },
   meat:    { name: 'Mystery Meat', price: 4, desc: 'Teleport to a random spot; shakes followers' },
   mask:    { name: 'Gas Mask',   price: 5, desc: '30s proof against Exterminator gas' },
+  map:     { name: 'Extra Map', price: 4, desc: 'Restore your snatched paper map' },
 };
 
 // Chapter 1 roster per night (featured first)
@@ -91,6 +92,8 @@ const G = {
   effects: {},              // key -> seconds left
   lampOn: true,
   mapUp: false,
+  mapTaken: false,
+  mapRolled: false,
   time: 0,
   started: false,
   shiftDone: false,
@@ -560,7 +563,7 @@ function resetPlayer() {
   };
   for (const m of G.monsters) scene.remove(m.mesh);
   G.caps = 4; G.pockets = []; G.effects = {};
-  G.lampOn = true; G.mapUp = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
+  G.lampOn = true; G.mapUp = false; G.mapTaken = false; G.mapRolled = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
   G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
@@ -659,6 +662,7 @@ function useItem(slot) {
     promptEl.textContent = 'The meat tugs you somewhere random; the pack loses your trail.';
   }
   else if (id === 'mask') { addEffect('MASK', 30); }
+  else if (id === 'map') { G.mapTaken = false; promptEl.textContent = 'You unfold a fresh paper map.'; }
   G.pockets.splice(slot, 1);
   renderPockets();
 }
@@ -963,8 +967,17 @@ function aiDrooler(m, dt) {
       playerPinned(m, 'drooler');
     }
   } else if (m.state === 'pin') {
-    if (G.mapUp) { m.timer += dt; if (m.timer >= 3) { m.state = 'idle'; p.locked = false; removeMonster(m); } }
-    else m.timer = 0;
+    if (G.mapUp) {
+      m.timer += dt;
+      if (m.timer >= 3) {
+        if (!G.mapRolled && !G.mapTaken && Math.random() < 0.15) {
+          G.mapRolled = true; G.mapTaken = true; G.mapUp = false;
+          mapEl.classList.add('hidden');
+          promptEl.textContent = 'It snatched your map and ran! Unfold an extra map.';
+        }
+        m.state = 'idle'; p.locked = false; removeMonster(m);
+      }
+    } else m.timer = 0;
   }
 }
 
@@ -1962,6 +1975,7 @@ function toggleLamp() {
 }
 
 function toggleMap() {
+  if (G.mapTaken) { promptEl.textContent = 'Your map was snatched. Unfold an extra map to get it back.'; return; }
   G.mapUp = !G.mapUp;
   mapEl.classList.toggle('hidden', !G.mapUp);
   if (G.mapUp) drawMap();
@@ -2265,7 +2279,7 @@ window.__dbg = {
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
   wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
-  useItem, buyItem, openShop,
+  useItem, buyItem, openShop, toggleMap,
   worldGroup, camera,
   get pressure() { return pressure; },
   get grab() { return grab; },
