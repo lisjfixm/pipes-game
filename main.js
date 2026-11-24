@@ -718,7 +718,7 @@ function useItem(slot) {
     const safeSpots = G.nodes.filter(n => n.id !== G.safeNode && !G.monsters.some(m => m.node === n.id));
     const spots = safeSpots.length ? safeSpots : G.nodes.filter(n => n.id !== G.safeNode);
     p.node = spots[Math.floor(Math.random() * spots.length)].id;
-    p.moving = null;
+    p.moving = null; p.hidden = false;
     p.facing = G.nodes[p.node].neighbors[0] ?? null;
     for (const m of [...G.monsters]) { m.state = 'roam'; m.timer = 6; m.fogNode = null; }
     promptEl.textContent = 'The meat tugs you somewhere random; the pack loses your trail.';
