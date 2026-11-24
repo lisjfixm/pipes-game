@@ -1454,8 +1454,8 @@ function aiTwoOfThem(m, dt) {
     promptEl.textContent = 'MARCO! — answer POLO (Space)';
     beep(220, 0.2, 'sawtooth', 0.16);
   }
-  // Dale half: it sees the night vision / a lit flare down the hall.
-  if (G.lampOn || G.effects.FLARE) m.node = stepToward(m.node, p.node);
+  // Dale half: it sees the night vision / a lit flare / goop down the hall.
+  if (G.lampOn || G.effects.FLARE || G.effects.goop) m.node = stepToward(m.node, p.node);
   if (m.node === p.node) initiateGrab(m);
 }
 
@@ -2505,7 +2505,7 @@ requestAnimationFrame(loop);
 // ---------- Debug export ----------
 window.__dbg = {
   startCrawl, rotate, interact, openJob, hitNeedle, closeModal, killPlayer,
-  spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
+  spawnMonster, updateMonsters, scheduleMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
   wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar, openGuide, openSafeRoom, washGoop,
   useItem, buyItem, openShop, toggleMap, smashPod, struggleBehind, startCrawl,
