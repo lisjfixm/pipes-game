@@ -1446,8 +1446,13 @@ function aiRandalOG(m, dt) {
   if (G.effects.FLARE) { m.state = 'roam'; m.node = stepToward(m.node, G.safeNode); return; }
   m.timer -= dt;
   if (m.timer <= 0) {
-    const c = G.nodes.filter(n => n.id !== G.safeNode);
-    m.node = c[Math.floor(Math.random() * c.length)].id; m.timer = 4;
+    if (G.portals && G.portals.length) {
+      m.node = G.portals[Math.floor(Math.random() * G.portals.length)];
+    } else {
+      const c = G.nodes.filter(n => n.id !== G.safeNode);
+      m.node = c[Math.floor(Math.random() * c.length)].id;
+    }
+    m.timer = 4;
   }
   if (m.state !== 'chase') {
     if (distNodes(m.node, p.node) <= 4) m.state = 'chase';
