@@ -47,8 +47,8 @@ pocket slots are tappable.
   Ch2 square steel duct with cold ceiling strips, Ch3 round growth tube with
   glowing spores and round junction rooms.
 - Chapter landmarks: Ch2 junctions cross-link into six-way splits; the boss
-  night opens a third outer ring (the biggest map). Ch3 pairs two far dead ends
-  as **purple portals** — crawl into one to emerge from its twin on the map;
+  night opens a third outer ring (the biggest map). Ch3 marks two pairs of far
+  dead ends as **purple portals** — crawl into one to emerge from its twin on the map;
   three-way+ junctions open into enlarged round rooms. Hiding nooks are themed
   per chapter: Ch1 red-lit hole, Ch2 louvred service cubby, Ch3 vine-curtained
   grown pocket. Ch2 night 8 wires charged **zap gates** across ducts (crossing
@@ -129,7 +129,7 @@ pocket slots are tappable.
 - **The Faceling** — haunts one hiding nook; never hide in that hole.
 - **The Temp** — undoes finished jobs; keep your lamp on it to shoo it away.
 - **The Drip** — hangs overhead; drops on anyone who stops under it. Keep crawling.
-- **The Mother** — asleep until the work is done, then hunts your heat; stay lamp-off and get home.
+- **The Mother** — asleep until the work is done; the last job wakes her, then you have 50 s to crawl back to the safe room. She hunts your heat; stay lamp-off on the way.
 - **Her Young** — wanders in swarms; latching on slows your crawl. Step round them.
 
 ## Monster rules implemented (Chapter 3: The Growth)
@@ -152,7 +152,8 @@ Energy Drink (faster crawl), Smoke Bomb (hidden 8 s), Wrench (finishes the open
 job instantly / repels what lurks, then snaps), Tin Can (clatter pulls Randal
 and the Grinner off your trail), Glow Stick (green glow draws moths away 2 min),
 Mystery Meat (teleports to a random spot, shakes followers), Gas Mask (30 s
-proof against Exterminator gas), Extra Map (restores a snatched paper map).
+proof against Exterminator gas), Extra Map (restores a snatched paper map),
+Degreaser (scrub leech goop off anywhere; only consumed when gooped).
 
 ## Roadmap
 

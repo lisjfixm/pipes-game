@@ -23,6 +23,7 @@ const ITEMS = {
   meat:    { name: 'Mystery Meat', price: 4, desc: 'Teleport to a random spot; shakes followers' },
   mask:    { name: 'Gas Mask',   price: 5, desc: '30s proof against Exterminator gas' },
   map:     { name: 'Extra Map', price: 4, desc: 'Restore your snatched paper map' },
+  degreaser:{ name: 'Degreaser', price: 3, desc: 'Scrub leech goop off anywhere' },
 };
 
 // Chapter 1 roster per night (featured first)
@@ -118,6 +119,7 @@ const G = {
   jar: false,
   splashes: 0,
   escapeAt: 0,
+  motherEscape: false,
   marcoTimer: 0,
   marcoWindow: 0,
   jarReadyAt: 0,
@@ -584,7 +586,7 @@ function resetPlayer() {
   G.caps = 4; G.pockets = []; G.effects = {};
   G.lampOn = true; G.mapUp = false; G.mapTaken = false; G.mapRolled = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
-  G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0;
+  G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0; G.motherEscape = false;
   G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
   G.dropped = [];
   G.decoy = null; G.glow = null;
@@ -703,6 +705,12 @@ function useItem(slot) {
   }
   else if (id === 'mask') { addEffect('MASK', 30); }
   else if (id === 'map') { G.mapTaken = false; promptEl.textContent = 'You unfold a fresh paper map.'; }
+  else if (id === 'degreaser') {
+    if (!G.effects.goop) { promptEl.textContent = 'You have no goop to scrub off.'; return; }
+    delete G.effects.goop;
+    promptEl.textContent = 'The degreaser strips the leech slime off.';
+    beep(520, 0.12, 'triangle', 0.1);
+  }
   G.pockets.splice(slot, 1);
   renderPockets();
 }
@@ -1651,6 +1659,9 @@ function updateBossBar() {
   } else if (G.bossPhase === 'escape') {
     el.textContent = `GET HOME  ${Math.max(0, Math.ceil(G.escapeAt))}s`;
     el.classList.remove('hidden');
+  } else if (G.motherEscape) {
+    el.textContent = `MOTHER  GET HOME  ${Math.max(0, Math.ceil(G.escapeAt))}s`;
+    el.classList.remove('hidden');
   } else if (G.bossNight) {
     el.textContent = `KEYS ${G.keysHeld} · LOCKS ${G.locks}`;
     el.classList.remove('hidden');
@@ -1688,7 +1699,7 @@ function openGuide() {
       <p><strong>Crawl:</strong> W/Up ahead · A/D turn · S back. F lamp · M map · E interact · 1–4 items.</p>
       <p><strong>Vitals:</strong> Lamp battery drains when lit; warmth drops in the cold. Both recover fast in the safe room.</p>
       <p><strong>Shift:</strong> Finish every job, get back here and clock out. In Chapter 3, carry ingredients to the cauldron before you leave.</p>
-      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you · Wrench finishes a job or repels the pack · Can draws Randal/Grinner off · Glow Stick draws the moths · Meat teleports away · Mask blocks gas · Extra Map restores a snatched map.</p>
+      <p><strong>Items:</strong> Cola charges the lamp · Warmer restores warmth · Energy speeds you · Flare keeps things away · Smoke hides you · Wrench finishes a job or repels the pack · Can draws Randal/Grinner off · Glow Stick draws the moths · Meat teleports away · Mask blocks gas · Extra Map restores a snatched map · Degreaser scrubs leech goop off anywhere.</p>
     </div>
     <div class="guide-best">${groups}</div>
     <button id="close-modal" style="margin-top:14px">Back to the room</button>`;
@@ -1916,6 +1927,7 @@ function objectiveText() {
     if (G.bossPhase === 'escape') return `Get home in ${Math.max(0, Math.ceil(G.escapeAt))}s`;
     return 'Brew the cure — bring every ingredient to the cauldron';
   }
+  if (G.motherEscape) return `Get home in ${Math.max(0, Math.ceil(G.escapeAt))}s`;
   if (!G.shiftDone) return `Finish ${G.jobs.length} job${G.jobs.length === 1 ? '' : 's'}`;
   if (G.chapter === 3 && G.cureCarry > 0) return `Carry ${G.cureCarry} ingredient${G.cureCarry === 1 ? '' : 's'} to the cauldron`;
   return 'All jobs done — get back to the safe room';
@@ -1923,6 +1935,11 @@ function objectiveText() {
 
 function checkNightProgress() {
   if (G.jobs.length === 0) G.shiftDone = true;
+  if (G.chapter === 2 && G.night === 10 && G.shiftDone && !G.motherEscape) {
+    G.motherEscape = true; G.escapeAt = 50;
+    showNightCard('THE MOTHER WAKES', '50 seconds to get back to the safe room!');
+    beep(98, 0.5, 'sawtooth', 0.18);
+  }
   updateObjective();
 }
 
@@ -1945,6 +1962,7 @@ function bossWin() {
 
 function clockOut() {
   if (isFinale()) return; // finale resolves through the boss fight / escape timer
+  if (G.motherEscape) return; // Ch2 N10 resolves through the escape timer
   if (!G.shiftDone) return;
   if (G.chapter === 3 && G.cureCarry > 0) {
     promptEl.textContent = 'Bring the ingredient to the cauldron in the safe room.';
@@ -2181,6 +2199,9 @@ function drawMap() {
       svg += `<circle cx="${x}" cy="${y}" r="1.2" fill="#5ee87a"/>`;
     } else if (G.decoy && G.decoy.node === n.id) {
       svg += `<circle cx="${x}" cy="${y}" r="2.4" fill="#9a9488" stroke="#5c584f" stroke-width="1"/>`;
+    } else if (G.monsters.some(m => m.kind === 'server' && m.state === 'serve' && m.target === n.id)) {
+      svg += `<circle cx="${x}" cy="${y}" r="4" fill="none" stroke="#7fd4e8" stroke-width="1.4" stroke-dasharray="2 1.6"/>`;
+      svg += `<text x="${x}" y="${y - 7}" font-size="7" fill="#7fd4e8" text-anchor="middle">paper</text>`;
     } else if (n.portal) {
       svg += `<circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#8a4ad0" stroke-width="1.4" stroke-dasharray="2.5 2"/>`;
       svg += `<circle cx="${x}" cy="${y}" r="1.6" fill="#8a4ad0"/>`;
@@ -2364,6 +2385,20 @@ function loop(now) {
       updateBossBar();
       if (p.node === G.safeNode) { finaleWin(); return; }
       if (G.escapeAt <= 0) return killPlayer({ name: 'The Two of Them', kind: 'twoofthem' });
+    }
+
+    // Ch2 Night 10: Mother wakes, 50 seconds to get home
+    if (G.motherEscape) {
+      G.escapeAt -= dt;
+      updateBossBar();
+      if (p.node === G.safeNode) {
+        for (const m of [...G.monsters]) removeMonster(m);
+        G.monsters = [];
+        G.chapter = 3; G.night = 1;
+        startNight();
+        return;
+      }
+      if (G.escapeAt <= 0) return killPlayer({ name: 'The Mother', kind: 'mother' });
     }
 
     if (!G.debugFreeze) { p.slow = false; scheduleMonsters(dt); updateMonsters(dt); }
