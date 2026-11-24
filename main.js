@@ -563,6 +563,7 @@ function resetPlayer() {
     moving: null,             // {from,to,t,dur,back}
     battery: d.battery, warmth: 100,
     locked: false, hidden: false,
+    nookTimer: 0,
     speedBoost: 0, slow: false,
     lookYaw: 0, lookPitch: 0,
   };
@@ -950,6 +951,7 @@ function journalHint(kind) {  const hints = {
     growth: 'Sitting in the dark too long lets the Growth in. Keep your night vision on.',
     cold: 'You are freezing. Turn your lamp back on and get to the warm safe room.',
     thing: 'It only comes in when you back up too much. Stop backing up; mash Space to break free.',
+    nosy: 'It peeks over your map and nooks. Don\'t stare at the map, and don\'t hide in one hole too long.',
   };
   return hints[kind] ?? 'Learn its rule and it cannot touch you.';
 }
@@ -2309,6 +2311,10 @@ function loop(now) {
       G.behind.t -= dt;
       if (G.behind.t <= 0) return killPlayer({ name: 'The Thing Behind You', kind: 'thing' });
     }
+    if (p.hidden) {
+      p.nookTimer += dt;
+      if (p.nookTimer > 25) return killPlayer({ name: 'Nosy', kind: 'nosy' });
+    } else p.nookTimer = 0;
     // effects timers
     for (const k of Object.keys(G.effects)) { G.effects[k] -= dt; if (G.effects[k] <= 0) delete G.effects[k]; }
     if (G.decoy && --G.decoy.t <= 0) G.decoy = null;
