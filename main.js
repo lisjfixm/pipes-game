@@ -193,6 +193,21 @@ function buildMap() {
   });
   ends.forEach((e, k) => link(ring2[[0, 2, 4][k]], e));
 
+  const bossNight = nightTable()[G.night - 1].jobs === 0;
+  // Ch2: junctions split up to six ways — cross-link the outer ring across the hexagon.
+  if (G.chapter === 2) {
+    for (let i = 0; i < N; i++) link(ring2[i], ring2[(i + 2) % N]);
+  }
+  // Boss night: the biggest map — a third outer ring tied to the outer duct ring.
+  if (bossNight) {
+    const ring3 = [];
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      ring3.push(add(Math.cos(a) * 19, Math.sin(a) * 19));
+    }
+    ring2.forEach((n, i) => { link(n, ring3[i]); link(ring3[i], ring3[(i + 1) % N]); });
+  }
+
   // hiding nooks on some ring1 / ring2 nodes
   ring1.forEach((n, i) => { if (i % 2 === 0) G.nodes[n].nook = true; });
 
@@ -347,6 +362,8 @@ function buildWorld3D() {
   for (const n of G.nodes) {
     const s = new THREE.Mesh(jointGeometry(), jointMat);
     s.position.set(n.x, 0, n.z);
+    // Ch3: three-way+ junctions open into round rooms, slightly larger.
+    if (CH === 3 && n.neighbors.length >= 3) s.scale.setScalar(1.18);
     worldGroup.add(s);
     if (n.job && !n.job.done) {
       const panel = new THREE.Mesh(
