@@ -1412,11 +1412,11 @@ function aiGardener(m, dt) {
   if (m.state !== 'chase') {
     m.timer -= dt;
     if (m.timer <= 0) { const nb = G.nodes[m.node].neighbors; m.node = nb[Math.floor(Math.random() * nb.length)]; m.timer = 2; }
-    if (distNodes(m.node, p.node) <= 2 && G.cureCarry > 0) m.state = 'chase';
+    if (distNodes(m.node, p.node) <= 3 && G.cureCarry > 0) m.state = 'chase';
   } else {
     m.node = stepToward(m.node, p.node);
     if (m.node === p.node) return killPlayer(m);
-    if (distNodes(m.node, p.node) > 4) m.state = 'roam';
+    if (distNodes(m.node, p.node) > 5) m.state = 'roam';
   }
 }
 
@@ -1601,7 +1601,7 @@ function scheduleMonsters(dt) {
   const roster0 = nightTable()[G.night - 1].roster;
   const roster = G.motherGrowth ? roster0.filter(k => k !== 'grinner' && k !== 'flesh') : roster0;
   const active = new Set(G.monsters.map(m => m.kind));
-  const missing = roster.filter(k => !active.has(k));
+  const missing = roster.filter(k => !active.has(k) && !(k === 'server' && G.serverDone));
   const jobsDone = (G.jobTotal || 0) - G.jobs.length;
   const maxOut = Math.max(1, Math.min(roster.length, (G.night >= 3 ? 2 : 1) + Math.floor(jobsDone / 2)) - 1);
   if (!missing.length) { spawnClock = 6; return; }
@@ -2330,7 +2330,7 @@ function drawMap() {
     if (m.kind === 'janitor') {
       svg += `<circle cx="${x}" cy="${y}" r="${ring(3)}" fill="none" stroke="${MBROWN}" stroke-width="1" stroke-dasharray="3 3" opacity="0.75"/>`;
     } else if (m.kind === 'gardener') {
-      svg += `<circle cx="${x}" cy="${y}" r="${ring(2)}" fill="none" stroke="${MGREEN}" stroke-width="1" opacity="0.55"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="${ring(3)}" fill="none" stroke="${MGREEN}" stroke-width="1" opacity="0.55"/>`;
     } else if (m.kind === 'choir') {
       svg += `<circle cx="${x}" cy="${y}" r="${ring(2)}" fill="none" stroke="${MGREEN}" stroke-width="1" stroke-dasharray="2 2" opacity="0.6"/>`;
     } else if (m.kind === 'exterminator' && m.fogNode != null) {
