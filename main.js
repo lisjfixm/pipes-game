@@ -2448,6 +2448,7 @@ function drawMap() {
   svg += `</g>`;
   svg += `<text x="26" y="284" font-size="6.5" fill="${MGREY}">red scribble = Randal / Rampage · bucket = Janitor · orange = Sweeper route</text>`;
   svg += `<text x="26" y="292" font-size="6.5" fill="${MGREY}">green ring = Gardener · dashed = Choir song · dash red = Flesh charge</text>`;
+  svg += `<text x="160" y="292" font-size="6.5" fill="${MGREY}">purple = portal · blue X = gate · orange dot = growth</text>`;
   svg += `</svg>`;
   mapEl.innerHTML = svg;
 }
