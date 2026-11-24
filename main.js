@@ -1348,6 +1348,7 @@ function removeMonster(m) {
 
 // ---------- Spawn scheduling ----------
 let spawnClock = 0;
+let proxTimer = 0;
 function scheduleMonsters(dt) {
   spawnClock -= dt;
   if (spawnClock > 0) return;
@@ -2164,6 +2165,16 @@ function loop(now) {
     }
 
     if (!G.debugFreeze) { scheduleMonsters(dt); updateMonsters(dt); }
+    // proximity cue: a low tick when something is nearby, louder up close
+    proxTimer -= dt;
+    if (proxTimer <= 0) {
+      proxTimer = 1.2;
+      let nearest = 99;
+      for (const m of G.monsters) {
+        nearest = Math.min(nearest, v(m.node).distanceTo(v(p.node)));
+      }
+      if (nearest < 5) beep(nearest < 2 ? 95 : 70, 0.08, 'sawtooth', nearest < 2 ? 0.1 : 0.04, -20);
+    }
     updateHUD(dt);
   }
 
