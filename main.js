@@ -2022,7 +2022,14 @@ function wakeMother() {
   const candidates = G.nodes.filter(n => n.id !== G.safeNode && !n.nook && !n.job).map(n => n.id);
   shuffle(candidates);
   const total = Math.min(3, candidates.length);
-  for (let i = 0; i < total; i++) G.growths.push({ node: candidates[i], burned: false });
+  const growthMat = new THREE.MeshStandardMaterial({ color: 0xc96a2a, emissive: 0xff8a3a, emissiveIntensity: 1.0, transparent: true, opacity: 0.85 });
+  for (let i = 0; i < total; i++) {
+    const n = G.nodes[candidates[i]];
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 10), growthMat);
+    mesh.position.set(n.x, 0.7, n.z);
+    worldGroup.add(mesh);
+    G.growths.push({ node: candidates[i], burned: false, mesh });
+  }
   // everyone's pockets get topped up with flares, one per growth
   let need = total - G.pockets.filter(x => x === 'flare').length;
   while (need > 0 && G.pockets.length < 4) { G.pockets.push('flare'); need--; }
@@ -2036,6 +2043,7 @@ function burnGrowth(g) {
   if (slot < 0) { promptEl.textContent = 'You need a flare to burn this growth.'; return; }
   G.pockets.splice(slot, 1); renderPockets();
   g.burned = true; G.growthBurned++;
+  if (g.mesh) { worldGroup.remove(g.mesh); g.mesh = null; }
   const mother = G.monsters.find(m => m.kind === 'mother');
   if (mother) mother.node = g.node; // furious, heads straight for that growth
   beep(140, 0.4, 'sawtooth', 0.16);
