@@ -100,6 +100,13 @@ const G = {
   cureDeposited: 0,
   portals: [],
   flareReadyAt: 0,
+  bossPhase: 'brew',   // brew | fight | escape  (Ch3 Night 10)
+  jar: false,
+  splashes: 0,
+  escapeAt: 0,
+  marcoTimer: 0,
+  marcoWindow: 0,
+  jarReadyAt: 0,
 };
 window.G = G;  // debug / headless inspection
 
@@ -547,6 +554,8 @@ function resetPlayer() {
   G.caps = 4; G.pockets = []; G.effects = {};
   G.lampOn = true; G.mapUp = false; G.monsters = []; G.time = 0; G.darkTimer = 0;
   G.cureCarry = 0; G.cureDeposited = 0; G.flareReadyAt = 0;
+  G.bossPhase = 'brew'; G.jar = false; G.splashes = 0; G.escapeAt = 0;
+  G.marcoTimer = 0; G.marcoWindow = 0; G.jarReadyAt = 0;
 }
 
 function placePlayerCamera() {
@@ -1241,10 +1250,95 @@ function aiRandalOG(m, dt) {
 
 function aiTwoOfThem(m, dt) {
   const p = G.player;
-  if (!G.shiftDone) { m.state = 'sleep'; return; }
+  if (G.bossPhase === 'brew' || G.bossPhase === 'escape') { m.state = 'idle'; return; }
   if (G.effects.smoke || p.node === G.safeNode) { m.state = 'idle'; return; }
-  m.node = stepToward(m.node, p.node);
-  if (m.node === p.node) return killPlayer(m);
+  // Marco half: periodic MARCO call with a 3 s POLO window.
+  G.marcoTimer -= dt;
+  if (G.marcoWindow > 0) {
+    G.marcoWindow -= dt;
+    if (G.marcoWindow <= 0) { initiateGrab(m); return; }
+  } else if (G.marcoTimer <= 0) {
+    G.marcoWindow = 3;
+    G.marcoTimer = 15 + Math.random() * 7;
+    promptEl.textContent = 'MARCO! — answer POLO (Space)';
+    beep(220, 0.2, 'sawtooth', 0.16);
+  }
+  // Dale half: it sees the night vision / a lit flare down the hall.
+  if (G.lampOn || G.effects.flare) m.node = stepToward(m.node, p.node);
+  if (m.node === p.node) initiateGrab(m);
+}
+
+// ---------- Two of Them: grab / splash ----------
+let grab = null;
+let grabTimer = null;
+
+function initiateGrab(m) {
+  if (G.state !== 'playing' || grab) return;
+  if (!G.jar) return killPlayer(m);
+  G.state = 'modal';
+  G.player.locked = true;
+  grab = { pos: 0.5, band: Math.max(0.14, 0.28 - G.splashes * 0.05), dir: 1, boss: m };
+  renderGrab();
+  grabTimer = setInterval(() => {
+    if (!grab) return;
+    grab.pos += grab.dir * 0.016;
+    if (grab.pos >= 1) { grab.pos = 1; grab.dir = -1; }
+    if (grab.pos <= 0) { grab.pos = 0; grab.dir = 1; }
+    const el = document.querySelector('#grab-needle');
+    if (el) el.style.top = (grab.pos * 100) + '%';
+  }, 30);
+}
+
+function renderGrab() {
+  const bandTop = 0.5 - grab.band / 2;
+  modalBox.innerHTML = `
+    <h2>THE TWO OF THEM</h2>
+    <p style="color:var(--muted)">Both faces fill the screen — hit the green to splash the cure · splash ${G.splashes}/3</p>
+    <div class="needle-wrap">
+      <div class="needle-track"></div>
+      <div class="needle-green" style="top:${bandTop * 100}%; height:${grab.band * 100}%"></div>
+      <div class="needle" id="grab-needle" style="top:${grab.pos * 100}%"></div>
+    </div>
+    <button id="grab-btn">Splash it (Space)</button>`;
+  $('grab-btn').onclick = hitGrab;
+}
+
+function hitGrab() {
+  if (!grab) return;
+  const inGreen = grab.pos >= 0.5 - grab.band / 2 && grab.pos <= 0.5 + grab.band / 2;
+  if (!inGreen) { closeGrab(); return killPlayer(grab.boss); }
+  G.splashes++;
+  G.jar = false;
+  const boss = grab.boss;
+  closeGrab();
+  boss.node = farNodeFrom(G.player.node);
+  beep(760, 0.18, 'triangle', 0.16);
+  if (G.splashes >= 3) { startEscape(); return; }
+  promptEl.textContent = `Splash ${G.splashes}/3! It staggers off — back to the cauldron for another jar.`;
+  updateBossBar();
+}
+
+function closeGrab() {
+  if (grabTimer) { clearInterval(grabTimer); grabTimer = null; }
+  grab = null;
+  modal.classList.add('hidden');
+  G.state = 'playing';
+  G.player.locked = false;
+}
+
+function startEscape() {
+  G.bossPhase = 'escape';
+  for (const m of [...G.monsters]) removeMonster(m);
+  G.escapeAt = 50;
+  showNightCard('THEY COME APART', '50 seconds to get back to the safe room!');
+  promptEl.textContent = 'They fell apart — run home!';
+  updateBossBar();
+}
+
+function finaleWin() {
+  G.state = 'card';
+  for (const m of [...G.monsters]) removeMonster(m);
+  showNightCard('CHAPTER 3 CLEAR', 'You made it home. (Prototype ends here.)');
 }
 
 function removeMonster(m) {
@@ -1316,6 +1410,11 @@ function openSafeRoom() {
   if (G.chapter === 3 && G.cureCarry > 0) {
     rows.push(`<button id="sr-cauldron">Cauldron — deposit ${G.cureCarry} ingredient${s}</button>`);
   }
+  if (isFinale() && G.bossPhase === 'fight') {
+    if (G.jar) rows.push(`<button id="sr-jar" disabled>Holding a cure jar</button>`);
+    else if (G.time < G.jarReadyAt) rows.push(`<button id="sr-jar" disabled>Cauldron refilling…</button>`);
+    else rows.push(`<button id="sr-jar">Take a cure jar</button>`);
+  }
   if (G.bossNight) {
     rows.push(`<button id="sr-flare" ${flareReady ? '' : 'disabled'}>Flare box — ${flareReady ? 'take a flare' : 'ready soon'}</button>`);
   }
@@ -1327,6 +1426,7 @@ function openSafeRoom() {
   const guideBtn = $('sr-guide'); if (guideBtn) guideBtn.onclick = openGuide;
   const cauldronBtn = $('sr-cauldron'); if (cauldronBtn) cauldronBtn.onclick = depositCure;
   const flareBtn = $('sr-flare'); if (flareBtn) flareBtn.onclick = takeFlareBox;
+  const jarBtn = $('sr-jar'); if (jarBtn) jarBtn.onclick = takeJar;
   $('close-modal').onclick = closeModal;
   modal.classList.remove('hidden');
 }
@@ -1336,7 +1436,60 @@ function depositCure() {
   G.cureDeposited += G.cureCarry; G.cureCarry = 0;
   promptEl.textContent = 'Ingredient into the cauldron.';
   beep(520, 0.12, 'triangle', 0.14);
+  if (G.chapter === 3 && G.night === 10 && G.cureDeposited >= G.jobTotal) wakeBoss();
+  else openSafeRoom();
+}
+
+// Ch3 Night 10 finale: cure brewed → The Two of Them wakes.
+function isFinale() { return G.chapter === 3 && G.night === 10; }
+
+function wakeBoss() {
+  G.bossPhase = 'fight';
+  for (const m of [...G.monsters]) removeMonster(m);
+  spawnMonster('twoofthem');
+  const boss = G.monsters.find(m => m.kind === 'twoofthem');
+  if (boss) boss.node = farNodeFrom(G.safeNode);
+  G.marcoTimer = 16;
+  showNightCard('THE TWO OF THEM', 'The cure is brewed. Grab a jar from the cauldron.');
+  beep(180, 0.5, 'sawtooth', 0.2);
+  updateBossBar();
   openSafeRoom();
+}
+
+function farNodeFrom(nodeId) {
+  let best = G.safeNode, bd = -1;
+  for (const n of G.nodes) {
+    if (n.id === nodeId) continue;
+    const d = G.safeDist[n.id] ?? 0;
+    if (d > bd) { bd = d; best = n.id; }
+  }
+  return best;
+}
+
+function takeJar() {
+  if (G.jar || G.time < G.jarReadyAt) return;
+  G.jar = true;
+  G.jarReadyAt = G.time + 8;
+  promptEl.textContent = 'Cure jar in hand. Let it grab you, then splash the green.';
+  beep(620, 0.1, 'triangle', 0.12);
+  openSafeRoom();
+}
+
+function updateBossBar() {
+  const el = bossKeysEl;
+  if (G.bossPhase === 'fight') {
+    const seg = '◼'.repeat(3 - G.splashes) + '◻'.repeat(G.splashes);
+    el.textContent = `TWO OF THEM  ${seg}`;
+    el.classList.remove('hidden');
+  } else if (G.bossPhase === 'escape') {
+    el.textContent = `GET HOME  ${Math.max(0, Math.ceil(G.escapeAt))}s`;
+    el.classList.remove('hidden');
+  } else if (G.bossNight) {
+    el.textContent = `KEYS ${G.keysHeld} · LOCKS ${G.locks}`;
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
 }
 
 function takeFlareBox() {
@@ -1578,6 +1731,11 @@ function objectiveText() {
     if (G.keysHeld > 0) return `Unlock the cage · ${G.keysHeld} key${G.keysHeld === 1 ? '' : 's'} held, ${G.locks} lock${G.locks === 1 ? '' : 's'} left`;
     return `Find ${G.locks} cage keys, then free Randal`;
   }
+  if (isFinale()) {
+    if (G.bossPhase === 'fight') return G.jar ? 'Hold the jar — let it grab you, splash the green' : 'Grab a cure jar from the cauldron';
+    if (G.bossPhase === 'escape') return `Get home in ${Math.max(0, Math.ceil(G.escapeAt))}s`;
+    return 'Brew the cure — bring every ingredient to the cauldron';
+  }
   if (!G.shiftDone) return `Finish ${G.jobs.length} job${G.jobs.length === 1 ? '' : 's'}`;
   if (G.chapter === 3 && G.cureCarry > 0) return `Carry ${G.cureCarry} ingredient${G.cureCarry === 1 ? '' : 's'} to the cauldron`;
   return 'All jobs done — get back to the safe room';
@@ -1606,6 +1764,7 @@ function bossWin() {
 }
 
 function clockOut() {
+  if (isFinale()) return; // finale resolves through the boss fight / escape timer
   if (!G.shiftDone) return;
   if (G.chapter === 3 && G.cureCarry > 0) {
     promptEl.textContent = 'Bring the ingredient to the cauldron in the safe room.';
@@ -1673,8 +1832,17 @@ function interact() {
 // ---------- Input ----------
 addEventListener('keydown', (e) => {
   G.keys[e.code] = true;
-  if (G.state === 'modal' && e.code === 'Space') { e.preventDefault(); if (pressure) hitNeedle(); return; }
+  if (G.state === 'modal' && e.code === 'Space') {
+    e.preventDefault();
+    if (grab) hitGrab(); else if (pressure) hitNeedle();
+    return;
+  }
   if (G.state !== 'playing') return;
+  if (e.code === 'Space' && G.marcoWindow > 0) {
+    G.marcoWindow = 0;
+    promptEl.textContent = 'POLO! It heard you — move away from here.';
+    return;
+  }
   switch (e.code) {
     case 'KeyW': case 'ArrowUp': { if (G.player.facing != null) startCrawl(G.player.facing); break; }
     case 'KeyS': case 'ArrowDown': { const nb = G.nodes[G.player.node].neighbors; const back = nb.find(n => n !== G.player.facing) ?? G.player.facing; if (back != null) startCrawl(back, true); break; }
@@ -1975,6 +2143,14 @@ function loop(now) {
     for (const k of Object.keys(G.effects)) { G.effects[k] -= dt; if (G.effects[k] <= 0) delete G.effects[k]; }
     if (p.speedBoost > 0) p.speedBoost -= dt;
 
+    // Ch3 finale escape countdown
+    if (G.bossPhase === 'escape') {
+      G.escapeAt -= dt;
+      updateBossBar();
+      if (p.node === G.safeNode) { finaleWin(); return; }
+      if (G.escapeAt <= 0) return killPlayer({ name: 'The Two of Them', kind: 'twoofthem' });
+    }
+
     if (!G.debugFreeze) { scheduleMonsters(dt); updateMonsters(dt); }
     updateHUD(dt);
   }
@@ -1989,8 +2165,10 @@ window.__dbg = {
   startCrawl, rotate, interact, openJob, hitNeedle, closeModal, killPlayer,
   spawnMonster, updateMonsters, startNight, clockOut, checkNightProgress,
   wirePick, weldSeg, clampLeak,
+  wakeBoss, initiateGrab, hitGrab, startEscape, finaleWin, takeJar,
   worldGroup, camera,
   get pressure() { return pressure; },
+  get grab() { return grab; },
 };
 
 // ---------- Buttons ----------

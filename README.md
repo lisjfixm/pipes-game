@@ -80,6 +80,12 @@ pocket slots are tappable.
 - Night 10 boss: collect 3 cage keys from far junctions, bring them to Randal's
   cage and unlock the bars; the Foreman hunts all night. Smoke bomb hides from him;
   safe room and nooks are off-limits to him.
+- Chapter 3 finale — **The Two of Them**: brew every cure ingredient at the
+  cauldron to wake it; grab a cure jar from the pot, survive its grab, hit the
+  green timing bar to splash it 3 times (each grab a narrower band), then a
+  50-second run back to the safe room. It plays both halves at once: a timed
+  MARCO! call you answer with POLO (Space, then move), and it spots your lit
+  night vision. No jar when it grabs you, and it kills you.
 - Death screen with a journal hint per monster; retry restarts the night.
 - Synthesized WebAudio cues: low ambient hum, lamp click, job-complete chime,
   death sting, boss-win arpeggio (no audio assets).
@@ -139,8 +145,7 @@ Energy Drink (faster crawl), Smoke Bomb (hidden 8 s).
   themed onto the shared mini-game mechanics; bespoke UIs still pending.
 - More sound: per-monster proximity cues, footsteps, crawling creak.
 - Monster portrait / journal pages in the safe room guide book.
-- Chapter 3 cure-jar finale (let it grab you, hit the green, splash three
-  times); Custom Night and Endless Mode.
+- Custom Night and Endless Mode.
 - Mobile / controller input.
 
 ## Project layout
