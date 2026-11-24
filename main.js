@@ -587,6 +587,7 @@ function resetPlayer() {
     battery: d.battery, warmth: 100,
     locked: false, hidden: false,
     nookTimer: 0,
+    mapTimer: 0, mapWarn: false,
     speedBoost: 0, slow: false,
     lookYaw: 0, lookPitch: 0,
   };
@@ -2522,6 +2523,11 @@ function loop(now) {
       p.nookTimer += dt;
       if (p.nookTimer > 25) return killPlayer({ name: 'Nosy', kind: 'nosy' });
     } else p.nookTimer = 0;
+    if (G.mapUp) {
+      p.mapTimer += dt;
+      if (p.mapTimer > 8 && !p.mapWarn) { p.mapWarn = true; promptEl.textContent = 'Something is peeking over your map — roll it up.'; }
+      if (p.mapTimer > 12) return killPlayer({ name: 'Nosy', kind: 'nosy' });
+    } else { p.mapTimer = 0; p.mapWarn = false; }
     // effects timers
     for (const k of Object.keys(G.effects)) { G.effects[k] -= dt; if (G.effects[k] <= 0) delete G.effects[k]; }
     if (G.decoy && --G.decoy.t <= 0) G.decoy = null;
