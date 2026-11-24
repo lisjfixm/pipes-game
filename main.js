@@ -2183,7 +2183,9 @@ function drawMap() {
   // monsters that live on the paper map
   for (const m of G.monsters) {
     const x = sx(G.nodes[m.node].x), y = sz(G.nodes[m.node].z);
-    if (m.kind === 'randal' || m.kind === 'randalog' || m.kind === 'twoofthem' || m.kind === 'rampage') {
+    const randOff = G.diff === 'insane' && (m.kind === 'randal' || m.kind === 'randalog');
+    if (randOff) { /* Insane: Randal is off your map */ }
+    else if (m.kind === 'randal' || m.kind === 'randalog' || m.kind === 'twoofthem' || m.kind === 'rampage') {
       svg += scribbleFace(x, y, MRED);
       // red dots down the pipe he is looking along
       const nb = G.nodes[m.node].neighbors;
@@ -2219,7 +2221,8 @@ function drawMap() {
     // the wiki only puts the listed things on it.
   }
 
-  // you: a red arrow pointing down the pipe you are facing
+  // you: a red arrow pointing down the pipe you are facing. Insane has no GPS.
+  if (G.diff !== 'insane') {
   const ax = sx(p.node), ay = sz(p.node);
   const fn = p.facing != null ? p.facing : p.node;
   let dx = sx(G.nodes[fn].x) - ax, dy = sz(G.nodes[fn].z) - ay;
@@ -2231,6 +2234,7 @@ function drawMap() {
   const nx = -dy, ny = dx;
   svg += `<polygon points="${tipX},${tipY} ${bx + nx * 4},${by + ny * 4} ${bx - nx * 4},${by - ny * 4}" fill="${MRED}" stroke="#f3ead2" stroke-width="2.2"/>`;
   svg += `<polygon points="${tipX},${tipY} ${bx + nx * 4},${by + ny * 4} ${bx - nx * 4},${by - ny * 4}" fill="${MRED}" stroke="${MRED}" stroke-width="0.8"/>`;
+  }
 
   // legend, pencil notes in the margin
   const ly = 268;
