@@ -32,6 +32,7 @@ body { color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Sego
 #effects { position: absolute; left: 18px; bottom: 156px; display: flex; gap: 6px; }
 .effect { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: #00000066; font-size: 11px; color: var(--accent); }
 #objective { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--muted); text-align: center; }
+#boss-keys { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--accent); text-align: center; }
 #prompt { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); font-size: 16px; background: #000000aa; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; }
 #night-card { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
 #night-card h1 { font-size: 42px; letter-spacing: .15em; margin: 0; }
